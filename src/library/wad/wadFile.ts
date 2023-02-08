@@ -1,18 +1,22 @@
 import { defaultWad, Wad } from "../../interfaces/wad/Wad";
 import { WadHeader, WadType } from "../../interfaces/wad/WadHeader";
 import { defaultWadMap, isMapGroupDirectoryEntry, MapGroupDirectory, WadMapGroupList, WadMapList } from "../../interfaces/wad/map/WadMap";
-import { WadDirectory } from "../../interfaces/WadDirectory";
+import { WadDirectory } from "../../interfaces/wad/WadDirectory";
 import { utf8ArrayToStr } from "../utilities/stringUtils";
 import { extractWadMapThingFlags, WadMapThing, WadThing, WadThingType } from "../../interfaces/wad/map/WadMapThing";
 import { extractWadMapLinedefFlags, WadMapLinedef } from "../../interfaces/wad/map/WadMapLinedef";
 import { WadMapSidedef } from "../../interfaces/wad/map/WadMapSidedef";
-import { WadFileEvent } from "../../interfaces/WadFileEvent";
+import { WadFileEvent } from "../../interfaces/wad/WadFileEvent";
 import { WadMapVertex } from "../../interfaces/wad/map/WadMapVertex";
 import { WadMapSegment } from "../../interfaces/wad/map/WadMapSegment";
 import { WadMapSubSector } from "../../interfaces/wad/map/WadMapSubSector";
 import { WadMapNode, WadMapNodeChildType } from "../../interfaces/wad/map/WadMapNode";
 import { WadMapSector } from "../../interfaces/wad/map/WadMapSector";
 import { WadMapRejectTable } from "../../interfaces/wad/map/WadMapRejectTable";
+import { defaultWadMapBlockmap, WadMapBlockMap } from "../../interfaces/wad/map/WadMapBlockMap";
+import { defaultPlaypal, WadPlayPal, WadPlayPalTypedEntry } from "../../interfaces/wad/WadPlayPal";
+import { colorMapLumpName, playPalLumpName } from "../constants";
+import { WadColorMap } from "../../interfaces/wad/WadColorMap";
 
 export class WadFile {
     private _fileUrl: string = '';
@@ -339,31 +343,37 @@ export class WadFile {
             return [val, type];
         }
         for (let i = 0; i < nodeCount; i++) {
-            const viewStart = i * nodeEntryLength;
-            const xPartStart = new Int16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
-            const yPartStart = new Int16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
-            const xPartChange = new Int16Array(view.buffer.slice(viewStart + 4, viewStart + 6))[0];
-            const yPartChange = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
-            const rightBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 16)));
-            const rightBBox = { top: rightBBoxRaw[0], bottom: rightBBoxRaw[1], left: rightBBoxRaw[2], right: rightBBoxRaw[3] };
-            const leftBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 16, viewStart + 24)));
-            const leftBBox = { top: leftBBoxRaw[0], bottom: leftBBoxRaw[1], left: leftBBoxRaw[2], right: leftBBoxRaw[3] };
-            const rightChildRaw = new Uint16Array(view.buffer.slice(viewStart + 24, viewStart + 26))[0];
-            const leftChildRaw = new Uint16Array(view.buffer.slice(viewStart + 26, viewStart + 28))[0];
-            const rightChildValues = getChildValues(rightChildRaw);
-            const rightChild = rightChildValues[0];
-            const rightChildType = rightChildValues[1];
-            const leftChildValues = getChildValues(leftChildRaw);
-            const leftChild = leftChildValues[0];
-            const leftChildType = leftChildValues[1];
+            if (view.buffer.slice(i * nodeEntryLength, i * nodeEntryLength + 28).byteLength !== 28) continue;
+            try {
+                const viewStart = i * nodeEntryLength;
+                const xPartStart = new Int16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
+                const yPartStart = new Int16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
+                const xPartChange = new Int16Array(view.buffer.slice(viewStart + 4, viewStart + 6))[0];
+                const yPartChange = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
+                const rightBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 16)));
+                const rightBBox = { top: rightBBoxRaw[0], bottom: rightBBoxRaw[1], left: rightBBoxRaw[2], right: rightBBoxRaw[3] };
+                const leftBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 16, viewStart + 24)));
+                const leftBBox = { top: leftBBoxRaw[0], bottom: leftBBoxRaw[1], left: leftBBoxRaw[2], right: leftBBoxRaw[3] };
+                const rightChildRaw = new Uint16Array(view.buffer.slice(viewStart + 24, viewStart + 26))[0];
+                const leftChildRaw = new Uint16Array(view.buffer.slice(viewStart + 26, viewStart + 28))[0];
+                const rightChildValues = getChildValues(rightChildRaw);
+                const rightChild = rightChildValues[0];
+                const rightChildType = rightChildValues[1];
+                const leftChildValues = getChildValues(leftChildRaw);
+                const leftChild = leftChildValues[0];
+                const leftChildType = leftChildValues[1];
 
+                nodes.push({
+                    xPartStart, yPartStart, xPartChange, yPartChange,
+                    rightBBoxRaw, leftBBoxRaw, rightChildRaw, leftChildRaw,
+                    rightBBox, leftBBox, leftChild, leftChildType,
+                    rightChild, rightChildType
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
 
-            nodes.push({
-                xPartStart, yPartStart, xPartChange, yPartChange,
-                rightBBoxRaw, leftBBoxRaw, rightChildRaw, leftChildRaw,
-                rightBBox, leftBBox, leftChild, leftChildType,
-                rightChild, rightChildType
-            });
         }
         return nodes;
     }
@@ -415,6 +425,60 @@ export class WadFile {
         }
 
         return table;
+    }
+
+    private getMapBlockmap(start: number, size: number) {
+        const blockmap: WadMapBlockMap = { ...defaultWadMapBlockmap };
+        const view = new Uint8Array(this.wadFile.slice(start, start + size));
+
+        const xOrigin = new Int16Array(view.buffer.slice(0, 2))[0];
+        const yOrigin = new Int16Array(view.buffer.slice(2, 4))[0];
+        const columns = new Int16Array(view.buffer.slice(4, 6))[0];
+        const rows = new Int16Array(view.buffer.slice(6, 8))[0];
+
+        blockmap.xOrigin = xOrigin;
+        blockmap.yOrigin = yOrigin;
+        blockmap.columns = columns;
+        blockmap.rows = rows;
+
+        const blockCount = columns * rows;
+        const offsets = [];
+        for (let i = 0; i < blockCount; i++) {
+            const baseOffset = 8 + i * 2;
+            const byte0 = new Uint8Array(view.buffer.slice(baseOffset, baseOffset + 1))[0];
+            const byte1 = new Uint8Array(view.buffer.slice(baseOffset + 1, baseOffset + 2))[0];
+            offsets.push((((byte1 & 0xFF) << 8) | (byte0 & 0xFF)) * 2);
+        }
+        blockmap.offsets = offsets;
+
+        const blockList = [];
+        for (let i = 0; i < offsets.length; i++) {
+            const startPoint = offsets[i];
+            let stopPoint: number | null = null;
+            let readLength = 0;
+            if (i < offsets.length - 1) {
+                stopPoint = offsets[i + 1];
+                readLength = stopPoint - startPoint;
+            }
+            else {
+                let lastByte = 0;
+                let readBytesCount = 0;
+                while (lastByte !== 65535) {
+                    readBytesCount += 2;
+                    lastByte = new Uint16Array(view.buffer.slice(startPoint + readBytesCount, startPoint + readBytesCount + 2))[0];
+                }
+                readLength = readBytesCount + 2;
+            }
+
+            let linesOfBlock = [];
+            for (let j = 0; j < readLength; j += 2) {
+                linesOfBlock.push(new Uint16Array(view.buffer.slice(startPoint + j, startPoint + j + 2))[0]);
+            }
+            linesOfBlock = linesOfBlock.filter(l => l !== 0 && l !== 65535);
+            blockList.push(linesOfBlock);
+        }
+        blockmap.blockList = blockList;
+        return blockmap;
     }
 
     public get maps(): WadMapList | null {
@@ -478,9 +542,14 @@ export class WadFile {
             const rejectLump = mapGroup.lumps.find(lump => lump.lumpName === 'REJECT');
             if (rejectLump) {
                 map.rejectTable = this.getMapRejectTable(rejectLump.lumpLocation, rejectLump.lumpSize, map.sectors.length);
-                this.sendEvent(WadFileEvent.MAP_SECTORS_PARSED, `Sectors parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(WadFileEvent.MAP_REJECT_TABLE_PARSED, `RejectTable parsed for ${mapGroup.name} in ${this._fileUrl}`);
             }
 
+            const blockmapLump = mapGroup.lumps.find(lump => lump.lumpName === 'BLOCKMAP');
+            if (blockmapLump) {
+                map.blockMap = this.getMapBlockmap(blockmapLump.lumpLocation, blockmapLump.lumpSize);
+                this.sendEvent(WadFileEvent.MAP_BLOCKMAP_PARSED, `BlockMap parsed for ${mapGroup.name} in ${this._fileUrl}`);
+            }
 
             maps.push(map);
         });
@@ -491,6 +560,77 @@ export class WadFile {
 
     private setMaps(maps: WadMapList) {
         this._wadStruct.maps = maps;
+    }
+
+    public get playpal(): WadPlayPal | null {
+        if (!this.fileLoaded) return null;
+        if (this._wadStruct.playPal) return this._wadStruct.playPal;
+        const dir: WadDirectory | null = this.directory;
+        if (!dir) return null;
+        const playPalLump = dir.find(e => e.lumpName === playPalLumpName);
+        if (!playPalLump) return null;
+
+        const playpal = { ...defaultPlaypal };
+        const view = new Uint8Array(this.wadFile.slice(playPalLump.lumpLocation, playPalLump.lumpLocation + playPalLump.lumpSize));
+        const paletteSize = 768;
+        const paletteCount = 14;
+        const rgbToHex = (r: number, g: number, b: number): string => {
+            //eslint-disable-next-line no-mixed-operators
+            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+        }
+        for (let i = 0; i < paletteCount; i++) {
+            const rawPaletteArr: number[] = [];
+            const typedPaletteArr: WadPlayPalTypedEntry = [];
+            for (let j = 0; j < paletteSize; j += 3) {
+                const offset = i * paletteSize + j;
+                const colorBytes = new Uint8Array(view.buffer.slice(offset, offset + 3));
+                rawPaletteArr.push(...Array.from(colorBytes));
+                typedPaletteArr.push({
+                    r: colorBytes[0],
+                    g: colorBytes[1],
+                    b: colorBytes[2],
+                    hex: rgbToHex(colorBytes[0], colorBytes[1], colorBytes[2])
+                });
+            }
+            playpal.rawPlaypal.push(rawPaletteArr);
+            playpal.typedPlaypal.push(typedPaletteArr);
+        }
+        this.sendEvent(WadFileEvent.PLAYPAL_PARSED, `PlayPal parsed for ${this._fileUrl}`);
+        this.setPlaypal(playpal);
+        return playpal;
+    }
+
+    private setPlaypal(playpal: WadPlayPal) {
+        this._wadStruct.playPal = playpal;
+    }
+
+    public get colormap(): WadColorMap | null {
+        if (!this.fileLoaded) return null;
+        if (this._wadStruct.colorMap) return this._wadStruct.colorMap;
+        const dir: WadDirectory | null = this.directory;
+        if (!dir) return null;
+        const colorMapLump = dir.find(e => e.lumpName === colorMapLumpName);
+        if (!colorMapLump) return null;
+
+        const colorMap = [];
+        const view = new Uint8Array(this.wadFile.slice(colorMapLump.lumpLocation, colorMapLump.lumpLocation + colorMapLump.lumpSize));
+        const colorMapSize = 256;
+        const colorMapCount = 34;
+        for (let i = 0; i < colorMapCount; i++) {
+            const colorMapArr: number[] = [];
+            for (let j = 0; j < colorMapSize; j++) {
+                const offset = i * colorMapSize + j;
+                colorMapArr.push(new Uint8Array(view.buffer.slice(offset, offset + 1))[0]);
+            }
+            colorMap.push(colorMapArr)
+        }
+        this.sendEvent(WadFileEvent.COLORMAP_PARSED, `ColorMap parsed for ${this._fileUrl}`);
+        this.setColormap(colorMap);
+        return colorMap;
+    }
+
+    private setColormap(colorMap: WadColorMap) {
+        this._wadStruct.colorMap = colorMap;
     }
 
 

@@ -1,12 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { WadFile } from "../library/wad/wadFile";
-import ReactJson from "react-json-view";
-import { WadFileEvent } from "../interfaces/WadFileEvent";
+import { WadFileEvent } from "../interfaces/wad/WadFileEvent";
+import { Box, Button, ButtonProps, CircularProgress, CssBaseline, styled } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { SideMenu } from "./SideMenu";
+import { TopBar } from "./TopBar";
+import { Content } from "./Content";
+import { Accordion, AccordionDetails, AccordionSummary } from "./Accordions";
+import { initialSelectedPage, SelectedPageInfo, SelectedPageType } from "../interfaces/MenuSelection";
+import { PlayPal } from "./PlayPal";
+import { ColorMap } from "./ColorMap";
+
+const LeftButton = styled((props: ButtonProps) => (
+    <Button {...props} />
+))(({ theme }) => ({
+    width: '100%',
+    justifyContent: 'left'
+}));
 
 export const FrontPage: React.FC = () => {
-    const [wadLoadSuccess, setWadLoadSuccess] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_, setWadLoadSuccess] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [lastEvent, setLastEvent] = useState<WadFileEvent | null>(null);
-    const [selectedMapName, setSelectedMapName] = useState<string | null>(null);
+    const [selectedPage, setSelectedPage] = useState<SelectedPageInfo>(initialSelectedPage);
 
     useEffect(() => {
         console.log(lastEvent);
@@ -23,71 +40,164 @@ export const FrontPage: React.FC = () => {
     const wadDirectory = wadFile.directory;
     const mapGroups = wadFile.mapGroups;
     const maps = wadFile.maps;
-    const selectedMap = maps?.find(m => m.name === selectedMapName);
+    const playPal = wadFile.playpal;
+    const colorMap = wadFile.colormap;
 
     const loadFileFromUrl = (url: string) => {
+        setLoading(true);
         setWadLoadSuccess(false);
+        setSelectedPage(initialSelectedPage);
         wadFile.loadFileFromUrl(url, (success, err) => {
             setWadLoadSuccess(success);
+            setLoading(false);
         });
     }
 
     const loadFile = (f: File) => {
+        setLoading(true);
         setWadLoadSuccess(false);
+        setSelectedPage(initialSelectedPage);
         wadFile.loadFile(f, (success, err) => {
             setWadLoadSuccess(success);
+            setLoading(false);
         });
     }
 
+    const getPlayPalContent = () => {
+        if (!playPal) return null;
+        return playPal.typedPlaypal.map((p, idx) => {
+            return (
+                <div style={{ display: 'inline-block' }} key={p[0].hex + '_' + idx}>
+                    <span>Palette {idx}</span>
+                    <PlayPal playPal={p} />
+                </div>
+            )
+        })
+    }
+
+    const getColorMapContent = () => {
+        if (!playPal || !colorMap) return null;
+        return playPal.typedPlaypal.map((p, idx) => {
+            return (
+                <div style={{ display: 'inline-block' }} key={p[0].hex + '_colormap' + idx}>
+                    <span>Palette {idx}</span>
+                    <ColorMap playPal={p} colorMap={colorMap} />
+                </div>
+            )
+        })
+    }
+
+    const getContentPage = () => {
+        if (loading) {
+            return (
+                <div style={{ textAlign: 'center', width: '100%' }}>
+                    <h1>Loading...</h1>
+                    <CircularProgress disableShrink={true} />
+                </div>
+            )
+        }
+        else {
+            switch (selectedPage[0]) {
+                case SelectedPageType.PLAYPAL:
+                    return getPlayPalContent();
+                case SelectedPageType.COLORMAP:
+                    return getColorMapContent();
+                default:
+                    return null;
+            }
+        }
+    }
+
+
     return (
-        <div>
-            <button onClick={() => { loadFileFromUrl(doomUrl) }}>Load DOOM.WAD</button>
-            <button onClick={() => { loadFileFromUrl(doom2Url) }}>Load DOOM2.WAD</button>
-            <input type='file' onChange={(e) => {
-                if (e.target.files) {
-                    const f = e.target.files[0];
-                    loadFile(f);
-                }
-            }} />
-            {wadFile.wadLoadAttempted && (
-                <>
-                    <p>Success: {wadLoadSuccess.toString()}</p>
-                    <p>Length: {wadFile.wadFileLength}</p>
-                    {wadFile.wadLoadError && <p>Error: {wadFile.wadLoadError}</p>}
-                    {wadHeader && (<><p>Header: </p>{<ReactJson src={wadHeader} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />}</>)}
-                    {wadDirectory && (<p>Directory: {wadDirectory.length} entries parsed</p>)}
-                    {mapGroups && (<><p>Map groups: </p>{<ReactJson src={mapGroups} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />}</>)}
-                    <br />
-                    {maps && (
-                        maps.map((m) => {
-                            return <button key={m.name} onClick={() => { setSelectedMapName(m.name) }}>{m.name}</button>
-                        })
-                    )}
-                    {selectedMapName && <p>Selected map: {selectedMapName}</p>}
-                    {selectedMap && (
-                        <>
-                            <p>Things</p>
-                            <ReactJson src={selectedMap.things} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Linedefs</p>
-                            <ReactJson src={selectedMap.linedefs} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Sidedefs</p>
-                            <ReactJson src={selectedMap.sidedefs} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Vertices</p>
-                            <ReactJson src={selectedMap.vertices} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Segments</p>
-                            <ReactJson src={selectedMap.segments} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>SubSectors</p>
-                            <ReactJson src={selectedMap.subSectors} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Nodes</p>
-                            <ReactJson src={selectedMap.nodes} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Sectors</p>
-                            <ReactJson src={selectedMap.sectors} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                            <p>Rejects</p>
-                            <ReactJson src={selectedMap.rejectTable} displayDataTypes={false} collapsed={true} name={null} groupArraysAfterLength={10000} />
-                        </>
-                    )}
-                </>
-            )}
-        </div>
+        <>
+            <CssBaseline />
+            <SideMenu>
+                {(wadHeader || wadDirectory || mapGroups) && (
+                    <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>Meta</AccordionSummary>
+                        <AccordionDetails>
+                            {wadHeader && (
+                                <LeftButton
+                                    onClick={() => { setSelectedPage([SelectedPageType.HEADER, 'Header data']) }}
+                                >
+                                    Header
+                                </LeftButton>
+                            )}
+                            {wadDirectory && (
+                                <LeftButton
+                                    onClick={() => { setSelectedPage([SelectedPageType.DIRECTORY, 'Directory data']) }}
+                                >
+                                    Directory
+                                </LeftButton>
+                            )}
+                            {mapGroups && (
+                                <LeftButton
+                                    onClick={() => { setSelectedPage([SelectedPageType.MAPGROUPS, 'MapGroup Lumps']) }}
+                                >
+                                    MapGroups
+                                </LeftButton>
+                            )}
+                        </AccordionDetails>
+                    </Accordion>
+                )}
+                {(playPal || colorMap) && (
+                    <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>Colors</AccordionSummary>
+                        <AccordionDetails>
+                            {playPal && (
+                                <LeftButton
+                                    onClick={() => { setSelectedPage([SelectedPageType.PLAYPAL, 'PLAYPAL']) }}
+                                >
+                                    PlayPal
+                                </LeftButton>
+                            )}
+                            {colorMap && (
+                                <LeftButton
+                                    onClick={() => { setSelectedPage([SelectedPageType.COLORMAP, 'COLORMAP']) }}
+                                >
+                                    ColorMap
+                                </LeftButton>
+                            )}
+                        </AccordionDetails>
+                    </Accordion>
+                )}
+                {maps && (
+                    <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>Maps</AccordionSummary>
+                        <AccordionDetails>
+                            {maps && maps.map((m) => {
+                                return (
+                                    <LeftButton
+                                        key={m.name}
+                                        onClick={() => { setSelectedPage([SelectedPageType.MAP, m.name]) }}
+                                    >
+                                        {m.name}
+                                    </LeftButton>
+                                )
+                            })}
+                        </AccordionDetails>
+                    </Accordion>
+                )}
+            </SideMenu>
+            <TopBar>
+                <div style={{ padding: '6px' }}>
+                    <button onClick={() => { loadFileFromUrl(doomUrl) }}>Load DOOM.WAD</button>
+                    <button onClick={() => { loadFileFromUrl(doom2Url) }}>Load DOOM2.WAD</button>
+                    <input type='file' onChange={(e) => {
+                        if (e.target.files) {
+                            const f = e.target.files[0];
+                            loadFile(f);
+                        }
+                    }} />
+                </div>
+            </TopBar>
+            <Content>
+                <Box sx={{ paddingLeft: '8px' }}>
+                    <h1 style={{ margin: 0, padding: 0 }}>{selectedPage[1]}</h1>
+                    {getContentPage()}
+                </Box>
+            </Content>
+        </>
     );
 }

@@ -1,5 +1,6 @@
 import { isMapLump, MapLump } from "../../../library/constants";
-import { WadDirectoryEntry } from "../../WadDirectory";
+import { WadDirectoryEntry } from "../WadDirectory";
+import { defaultWadMapBlockmap, WadMapBlockMap } from "./WadMapBlockMap";
 import { WadMapLinedef } from "./WadMapLinedef";
 import { WadMapNode } from "./WadMapNode";
 import { WadMapRejectTable } from "./WadMapRejectTable";
@@ -36,6 +37,7 @@ export interface WadMap {
     nodes: WadMapNode[];
     sectors: WadMapSector[];
     rejectTable: WadMapRejectTable;
+    blockMap: WadMapBlockMap;
 }
 export const defaultWadMap: Readonly<WadMap> = {
     name: '',
@@ -47,6 +49,7 @@ export const defaultWadMap: Readonly<WadMap> = {
     subSectors: [],
     nodes: [],
     sectors: [],
-    rejectTable: []
+    rejectTable: [],
+    blockMap: { ...defaultWadMapBlockmap }
 }
 export type WadMapList = WadMap[];
