@@ -10,6 +10,7 @@ import { Accordion, AccordionDetails, AccordionSummary } from "./Accordions";
 import { initialSelectedPage, SelectedPageInfo, SelectedPageType } from "../interfaces/MenuSelection";
 import { PlayPal } from "./PlayPal";
 import { ColorMap } from "./ColorMap";
+import { AutoMap } from "./AutoMap";
 
 const LeftButton = styled((props: ButtonProps) => (
     <Button {...props} />
@@ -29,10 +30,16 @@ export const FrontPage: React.FC = () => {
         console.log(lastEvent);
     }, [lastEvent])
 
-    const wadFileRef = useRef(new WadFile((e, msg) => {
-        setLastEvent(e);
-        // console.log(e, '|', msg);
-    }));
+    const wadFileRef = useRef(
+        new WadFile(
+            false,
+            false,
+            (e, msg) => {
+                setLastEvent(e);
+                // console.log(e, '|', msg);
+            }
+        )
+    );
     const wadFile = wadFileRef.current;
     const doomUrl = './DOOM.WAD';
     const doom2Url = './DOOM2.WAD';
@@ -87,6 +94,18 @@ export const FrontPage: React.FC = () => {
         })
     }
 
+    const getMapContent = () => {
+        if (!maps || !playPal) return null;
+        const mapData = maps.find(m => m.name === selectedPage[1]);
+        if (!mapData) return null;
+        return (
+            <div style={{ display: 'inline-block' }}>
+                <span>AutoMap</span>
+                <AutoMap mapData={mapData} playPal={playPal.typedPlaypal[0]} />
+            </div>
+        )
+    }
+
     const getContentPage = () => {
         if (loading) {
             return (
@@ -102,6 +121,8 @@ export const FrontPage: React.FC = () => {
                     return getPlayPalContent();
                 case SelectedPageType.COLORMAP:
                     return getColorMapContent();
+                case SelectedPageType.MAP:
+                    return getMapContent();
                 default:
                     return null;
             }

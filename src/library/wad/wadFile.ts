@@ -14,7 +14,7 @@ import { WadMapNode, WadMapNodeChildType } from "../../interfaces/wad/map/WadMap
 import { WadMapSector } from "../../interfaces/wad/map/WadMapSector";
 import { WadMapRejectTable } from "../../interfaces/wad/map/WadMapRejectTable";
 import { defaultWadMapBlockmap, WadMapBlockMap } from "../../interfaces/wad/map/WadMapBlockMap";
-import { defaultPlaypal, WadPlayPal, WadPlayPalTypedEntry } from "../../interfaces/wad/WadPlayPal";
+import { defaultPlaypal, preFilledPlayPal, WadPlayPal, WadPlayPalTypedEntry } from "../../interfaces/wad/WadPlayPal";
 import { colorMapLumpName, playPalLumpName } from "../constants";
 import { WadColorMap } from "../../interfaces/wad/WadColorMap";
 
@@ -26,7 +26,17 @@ export class WadFile {
     private _wadFile: ArrayBuffer = new ArrayBuffer(0);
     private _wadStruct: Partial<Wad> = { ...defaultWad };
     private _eventSink?: (evt: WadFileEvent, msg?: string) => void = undefined;
-    constructor(eventListener?: (evt: WadFileEvent, msg?: string) => void, fileUrl?: string, readyCb?: (success: boolean, err?: any) => void) {
+    private _parseRejects: boolean = false;
+    private _parseBlockmap: boolean = false;
+    constructor(
+        parseRejects: boolean,
+        parseBlockmap: boolean,
+        eventListener?: (evt: WadFileEvent, msg?: string) => void,
+        fileUrl?: string,
+        readyCb?: (success: boolean, err?: any) => void
+    ) {
+        this._parseRejects = parseRejects;
+        this._parseBlockmap = parseBlockmap;
         if (eventListener) {
             this._eventSink = eventListener;
         }
@@ -539,16 +549,20 @@ export class WadFile {
                 this.sendEvent(WadFileEvent.MAP_SECTORS_PARSED, `Sectors parsed for ${mapGroup.name} in ${this._fileUrl}`);
             }
 
-            const rejectLump = mapGroup.lumps.find(lump => lump.lumpName === 'REJECT');
-            if (rejectLump) {
-                map.rejectTable = this.getMapRejectTable(rejectLump.lumpLocation, rejectLump.lumpSize, map.sectors.length);
-                this.sendEvent(WadFileEvent.MAP_REJECT_TABLE_PARSED, `RejectTable parsed for ${mapGroup.name} in ${this._fileUrl}`);
+            if (this._parseRejects) {
+                const rejectLump = mapGroup.lumps.find(lump => lump.lumpName === 'REJECT');
+                if (rejectLump) {
+                    map.rejectTable = this.getMapRejectTable(rejectLump.lumpLocation, rejectLump.lumpSize, map.sectors.length);
+                    this.sendEvent(WadFileEvent.MAP_REJECT_TABLE_PARSED, `RejectTable parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                }
             }
 
-            const blockmapLump = mapGroup.lumps.find(lump => lump.lumpName === 'BLOCKMAP');
-            if (blockmapLump) {
-                map.blockMap = this.getMapBlockmap(blockmapLump.lumpLocation, blockmapLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_BLOCKMAP_PARSED, `BlockMap parsed for ${mapGroup.name} in ${this._fileUrl}`);
+            if (this._parseBlockmap) {
+                const blockmapLump = mapGroup.lumps.find(lump => lump.lumpName === 'BLOCKMAP');
+                if (blockmapLump) {
+                    map.blockMap = this.getMapBlockmap(blockmapLump.lumpLocation, blockmapLump.lumpSize);
+                    this.sendEvent(WadFileEvent.MAP_BLOCKMAP_PARSED, `BlockMap parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                }
             }
 
             maps.push(map);
@@ -568,7 +582,10 @@ export class WadFile {
         const dir: WadDirectory | null = this.directory;
         if (!dir) return null;
         const playPalLump = dir.find(e => e.lumpName === playPalLumpName);
-        if (!playPalLump) return null;
+        if (!playPalLump) {
+            this.setPlaypal(preFilledPlayPal);
+            return preFilledPlayPal;
+        }
 
         const playpal = { ...defaultPlaypal };
         const view = new Uint8Array(this.wadFile.slice(playPalLump.lumpLocation, playPalLump.lumpLocation + playPalLump.lumpSize));
