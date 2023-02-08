@@ -8,7 +8,7 @@ export interface WadHeader {
     directoryLocation: number;
 }
 
-export const defaultWadHeader: WadHeader = {
+export const defaultWadHeader: Readonly<WadHeader> = {
     type: WadType.PWAD,
     directoryEntryCount: 0,
     directoryLocation: 0,

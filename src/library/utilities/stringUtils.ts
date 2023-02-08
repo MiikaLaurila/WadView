@@ -3,7 +3,16 @@ export const utf8ArrayToStr = (function () {
     var charFromCodePt = String.fromCodePoint || String.fromCharCode;
     var result: string[] = [];
 
-    return function (array: Uint8Array) {
+    return function (originalArray: Uint8Array) {
+        const zeroIndex = originalArray.indexOf(0);
+        let array: Uint8Array = new Uint8Array();
+        if (zeroIndex >= 0) {
+            const terminated = originalArray.slice(0, zeroIndex);
+            array = terminated;
+        }
+        else {
+            array = originalArray;
+        }
         var codePt, byte1;
         var buffLen = array.length;
 

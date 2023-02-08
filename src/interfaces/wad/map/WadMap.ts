@@ -1,6 +1,14 @@
 import { isMapLump, MapLump } from "../../../library/constants";
 import { WadDirectoryEntry } from "../../WadDirectory";
+import { WadMapLinedef } from "./WadMapLinedef";
+import { WadMapNode } from "./WadMapNode";
+import { WadMapRejectTable } from "./WadMapRejectTable";
+import { WadMapSector } from "./WadMapSector";
+import { WadMapSegment } from "./WadMapSegment";
+import { WadMapSidedef } from "./WadMapSidedef";
+import { WadMapSubSector } from "./WadMapSubSector";
 import { WadMapThing } from "./WadMapThing";
+import { WadMapVertex } from "./WadMapVertex";
 
 export interface MapGroupDirectoryEntry extends WadDirectoryEntry {
     lumpName: MapLump;
@@ -18,9 +26,27 @@ export interface WadMapGroup {
 }
 export type WadMapGroupList = WadMapGroup[];
 export interface WadMap {
+    name: string;
     things: WadMapThing[];
+    linedefs: WadMapLinedef[];
+    sidedefs: WadMapSidedef[];
+    vertices: WadMapVertex[];
+    segments: WadMapSegment[];
+    subSectors: WadMapSubSector[];
+    nodes: WadMapNode[];
+    sectors: WadMapSector[];
+    rejectTable: WadMapRejectTable;
 }
-export const defaultWadMap: WadMap = {
+export const defaultWadMap: Readonly<WadMap> = {
+    name: '',
     things: [],
+    linedefs: [],
+    sidedefs: [],
+    vertices: [],
+    segments: [],
+    subSectors: [],
+    nodes: [],
+    sectors: [],
+    rejectTable: []
 }
 export type WadMapList = WadMap[];

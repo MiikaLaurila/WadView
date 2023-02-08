@@ -9,7 +9,7 @@ export interface Wad {
     maps: WadMapList;
 }
 
-export const defaultWad: Partial<Wad> = {
+export const defaultWad: Readonly<Partial<Wad>> = {
     header: undefined,
     directory: undefined,
     mapGroups: undefined,
