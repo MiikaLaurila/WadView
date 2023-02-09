@@ -25,6 +25,7 @@ export const FrontPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [lastEvent, setLastEvent] = useState<WadFileEvent | null>(null);
     const [selectedPage, setSelectedPage] = useState<SelectedPageInfo>(initialSelectedPage);
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         console.log(lastEvent);
@@ -203,14 +204,21 @@ export const FrontPage: React.FC = () => {
             </SideMenu>
             <TopBar>
                 <div style={{ padding: '6px' }}>
+                    {wadFile.fileName && <span style={{ fontWeight: 'bold', marginRight: '8px' }}>{wadFile.fileName}</span>}
                     <button onClick={() => { loadFileFromUrl(doomUrl) }}>Load DOOM.WAD</button>
                     <button onClick={() => { loadFileFromUrl(doom2Url) }}>Load DOOM2.WAD</button>
-                    <input type='file' onChange={(e) => {
-                        if (e.target.files) {
-                            const f = e.target.files[0];
-                            loadFile(f);
-                        }
-                    }} />
+                    <input
+                        style={{ display: 'none' }}
+                        type='file'
+                        onChange={(e) => {
+                            if (e.target.files) {
+                                const f = e.target.files[0];
+                                loadFile(f);
+                            }
+                        }}
+                        ref={inputRef}
+                    />
+                    <button onClick={() => { if (inputRef.current) inputRef.current.click() }}>Select File</button>
                 </div>
             </TopBar>
             <Content>

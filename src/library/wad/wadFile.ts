@@ -51,6 +51,9 @@ export class WadFile {
             this._eventSink(evt, msg);
         }
     }
+    get fileName() {
+        return this._fileUrl;
+    }
 
     get wadLoaded() {
         return this._wadLoaded;
