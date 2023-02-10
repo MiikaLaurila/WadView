@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { WadPlayPalColor, WadPlayPalTypedEntry } from "../interfaces/wad/WadPlayPal";
+import { useEffect, useRef, useState } from 'react';
+import { type WadPlayPalColor, type WadPlayPalTypedEntry } from '../interfaces/wad/WadPlayPal';
 
 interface Props {
     playPal: WadPlayPalTypedEntry;
@@ -12,13 +12,14 @@ interface HoverData {
     colorIndex: number;
 }
 
-export const PlayPal: React.FC<Props> = (props) => {
+export const PlayPal: React.FC<Props> = (props: Props) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const colorBlockSize = 16;
     const [hoverData, setHoverData] = useState<HoverData | null>(null);
+    const { playPal } = props;
 
     useEffect(() => {
-        if (!props.playPal) return;
+        if (!playPal) return;
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -26,9 +27,14 @@ export const PlayPal: React.FC<Props> = (props) => {
         canvas.width = 16 * colorBlockSize;
         canvas.height = 16 * colorBlockSize;
 
-        props.playPal.forEach((e, idx) => {
+        playPal.forEach((e, idx) => {
             ctx.fillStyle = e.hex;
-            ctx.fillRect((idx % 16) * colorBlockSize, Math.floor(idx / 16) * colorBlockSize, colorBlockSize, colorBlockSize);
+            ctx.fillRect(
+                (idx % 16) * colorBlockSize,
+                Math.floor(idx / 16) * colorBlockSize,
+                colorBlockSize,
+                colorBlockSize,
+            );
         });
 
         canvas.onmousemove = (e) => {
@@ -37,17 +43,15 @@ export const PlayPal: React.FC<Props> = (props) => {
             const yPos = e.clientY - rect.top;
             const xIndex = Math.floor(xPos / colorBlockSize);
             const yIndex = Math.floor(yPos / colorBlockSize);
-            const totalIndex = yIndex * 16 + xIndex
-            const color = props.playPal[totalIndex];
-            setHoverData({ xPos: e.x, yPos: e.y, color, colorIndex: totalIndex })
+            const totalIndex = yIndex * 16 + xIndex;
+            const color = playPal[totalIndex];
+            setHoverData({ xPos: e.x, yPos: e.y, color, colorIndex: totalIndex });
         };
         canvas.onmouseleave = () => {
             setHoverData(null);
-        }
+        };
+    }, [playPal]);
 
-    }, [props.playPal]);
-
-    const { playPal } = props;
     if (!playPal) return null;
 
     return (
@@ -64,7 +68,7 @@ export const PlayPal: React.FC<Props> = (props) => {
                         width: '120px',
                         height: '60px',
                         fontSize: '12px',
-                        paddingLeft: '2px'
+                        paddingLeft: '2px',
                     }}
                 >
                     <span>idx: {hoverData.colorIndex}</span>
@@ -76,4 +80,4 @@ export const PlayPal: React.FC<Props> = (props) => {
             )}
         </div>
     );
-}
+};

@@ -1,21 +1,24 @@
-import { Box, styled } from "@mui/material";
-import { PropsWithChildren } from "react";
+import { Box, styled } from '@mui/material';
+import { type PropsWithChildren } from 'react';
+import { defaultSidebarWidth, defaultTopbarHeight } from '../library/constants';
 
 interface Props {
     sideBarWidth?: number;
     height?: number;
 }
 
-export const TopBar: React.FC<PropsWithChildren<Props>> = (props) => {
+export const TopBar: React.FC<PropsWithChildren<Props>> = (props: PropsWithChildren<Props>) => {
+    const { sideBarWidth, height, children } = props;
+
     const TopBarBox = styled(Box)({
-        width: `calc(100vw - ${props.sideBarWidth ?? 200}px)`,
+        width: `calc(100vw - ${(sideBarWidth ?? defaultSidebarWidth) + 20}px)`,
         borderBottom: '1px solid grey',
         position: 'fixed',
-        height: props.height ?? 40,
+        height: height ?? defaultTopbarHeight,
         backgroundColor: 'white',
         zIndex: 100,
-        left: props.sideBarWidth ?? 200,
+        left: sideBarWidth ?? defaultSidebarWidth,
         top: 0,
     });
-    return <TopBarBox>{props.children}</TopBarBox>;
-}
+    return <TopBarBox>{children}</TopBarBox>;
+};

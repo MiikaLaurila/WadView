@@ -1,13 +1,15 @@
-import { Box, styled } from "@mui/material";
-import { PropsWithChildren } from "react";
+import { Box, styled } from '@mui/material';
+import { type PropsWithChildren } from 'react';
+import { defaultSidebarWidth } from '../library/constants';
 
 interface Props {
     width?: number;
 }
 
-export const SideMenu: React.FC<PropsWithChildren<Props>> = (props) => {
+export const SideMenu: React.FC<PropsWithChildren<Props>> = (props: PropsWithChildren<Props>) => {
+    const { width, children } = props;
     const SideBarBox = styled(Box)({
-        width: props.width ?? 200,
+        width: width ?? defaultSidebarWidth,
         borderRight: '1px solid grey',
         position: 'fixed',
         height: '100vh',
@@ -15,7 +17,7 @@ export const SideMenu: React.FC<PropsWithChildren<Props>> = (props) => {
         zIndex: 100,
         top: 0,
         left: 0,
-        overflowY: 'scroll'
+        overflowY: 'scroll',
     });
-    return <SideBarBox>{props.children}</SideBarBox>;
-}
+    return <SideBarBox>{children}</SideBarBox>;
+};

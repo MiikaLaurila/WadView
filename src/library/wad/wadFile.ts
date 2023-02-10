@@ -1,61 +1,80 @@
-import { defaultWad, Wad } from "../../interfaces/wad/Wad";
-import { WadHeader, WadType } from "../../interfaces/wad/WadHeader";
-import { defaultWadMap, isMapGroupDirectoryEntry, MapGroupDirectory, WadMapGroupList, WadMapList } from "../../interfaces/wad/map/WadMap";
-import { WadDirectory } from "../../interfaces/wad/WadDirectory";
-import { utf8ArrayToStr } from "../utilities/stringUtils";
-import { extractWadMapThingFlags, WadMapThing, WadThing, WadThingType } from "../../interfaces/wad/map/WadMapThing";
-import { extractWadMapLinedefFlags, WadMapLinedef } from "../../interfaces/wad/map/WadMapLinedef";
-import { WadMapSidedef } from "../../interfaces/wad/map/WadMapSidedef";
-import { WadFileEvent } from "../../interfaces/wad/WadFileEvent";
-import { WadMapVertex } from "../../interfaces/wad/map/WadMapVertex";
-import { WadMapSegment } from "../../interfaces/wad/map/WadMapSegment";
-import { WadMapSubSector } from "../../interfaces/wad/map/WadMapSubSector";
-import { WadMapNode, WadMapNodeChildType } from "../../interfaces/wad/map/WadMapNode";
-import { WadMapSector } from "../../interfaces/wad/map/WadMapSector";
-import { WadMapRejectTable } from "../../interfaces/wad/map/WadMapRejectTable";
-import { defaultWadMapBlockmap, WadMapBlockMap } from "../../interfaces/wad/map/WadMapBlockMap";
-import { defaultPlaypal, preFilledPlayPal, WadPlayPal, WadPlayPalTypedEntry } from "../../interfaces/wad/WadPlayPal";
-import { colorMapLumpName, playPalLumpName } from "../constants";
-import { WadColorMap } from "../../interfaces/wad/WadColorMap";
+import { defaultWad, type Wad } from '../../interfaces/wad/Wad';
+import { type WadHeader, WadType } from '../../interfaces/wad/WadHeader';
+import {
+    defaultWadMap,
+    isMapGroupDirectoryEntry,
+    type MapGroupDirectory,
+    type WadMapGroupList,
+    type WadMapList,
+} from '../../interfaces/wad/map/WadMap';
+import { type WadDirectory } from '../../interfaces/wad/WadDirectory';
+import { utf8ArrayToStr } from '../utilities/stringUtils';
+import {
+    extractWadMapThingFlags,
+    type WadMapThing,
+    WadThingDict,
+    type WadThing,
+    type WadThingType,
+    getWadMapThingGroup,
+} from '../../interfaces/wad/map/WadMapThing';
+import { extractWadMapLinedefFlags, type WadMapLinedef } from '../../interfaces/wad/map/WadMapLinedef';
+import { type WadMapSidedef } from '../../interfaces/wad/map/WadMapSidedef';
+import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
+import { type WadMapVertex } from '../../interfaces/wad/map/WadMapVertex';
+import { type WadMapSegment } from '../../interfaces/wad/map/WadMapSegment';
+import { type WadMapSubSector } from '../../interfaces/wad/map/WadMapSubSector';
+import { type WadMapNode, WadMapNodeChildType } from '../../interfaces/wad/map/WadMapNode';
+import { type WadMapSector } from '../../interfaces/wad/map/WadMapSector';
+import { type WadMapRejectTable } from '../../interfaces/wad/map/WadMapRejectTable';
+import { defaultWadMapBlockmap, type WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
+import {
+    defaultPlaypal,
+    preFilledPlayPal,
+    type WadPlayPal,
+    type WadPlayPalTypedEntry,
+} from '../../interfaces/wad/WadPlayPal';
+import { colorMapLumpName, playPalLumpName } from '../constants';
+import { type WadColorMap } from '../../interfaces/wad/WadColorMap';
 
 export class WadFile {
-    private _fileUrl: string = '';
-    private _wadLoaded: boolean = false;
-    private _wadLoadAttempted: boolean = false;
-    private _wadLoadError: string = '';
+    private _fileUrl = '';
+    private _wadLoaded = false;
+    private _wadLoadAttempted = false;
+    private _wadLoadError = '';
     private _wadFile: ArrayBuffer = new ArrayBuffer(0);
-    private _wadStruct: Partial<Wad> = { ...defaultWad };
-    private _eventSink?: (evt: WadFileEvent, msg?: string) => void = undefined;
-    private _parseRejects: boolean = false;
-    private _parseBlockmap: boolean = false;
+    private _wadStruct: Partial<Wad> = JSON.parse(JSON.stringify(defaultWad));
+    private readonly _eventSink?: (evt: WadFileEvent, msg?: string) => void = undefined;
+    private readonly _parseRejects: boolean = false;
+    private readonly _parseBlockmap: boolean = false;
     constructor(
         parseRejects: boolean,
         parseBlockmap: boolean,
         eventListener?: (evt: WadFileEvent, msg?: string) => void,
         fileUrl?: string,
-        readyCb?: (success: boolean, err?: any) => void
+        readyCb?: (success: boolean, err?: string) => void,
     ) {
         this._parseRejects = parseRejects;
         this._parseBlockmap = parseBlockmap;
-        if (eventListener) {
+        if (eventListener != null) {
             this._eventSink = eventListener;
         }
-        if (fileUrl && readyCb) {
+        if (fileUrl !== undefined && readyCb != null) {
             this._fileUrl = fileUrl;
             this.loadFileFromUrl(this._fileUrl, readyCb);
         }
     }
 
-    private sendEvent(evt: WadFileEvent, msg?: string) {
-        if (this._eventSink) {
+    private sendEvent(evt: WadFileEvent, msg?: string): void {
+        if (this._eventSink != null) {
             this._eventSink(evt, msg);
         }
     }
-    get fileName() {
+
+    get fileName(): string {
         return this._fileUrl;
     }
 
-    get wadLoaded() {
+    get wadLoaded(): boolean {
         return this._wadLoaded;
     }
 
@@ -63,7 +82,7 @@ export class WadFile {
         this._wadLoaded = loaded;
     }
 
-    get wadLoadAttempted() {
+    get wadLoadAttempted(): boolean {
         return this._wadLoadAttempted;
     }
 
@@ -71,7 +90,7 @@ export class WadFile {
         this._wadLoadAttempted = attempted;
     }
 
-    get wadLoadError() {
+    get wadLoadError(): string {
         return this._wadLoadError;
     }
 
@@ -79,7 +98,7 @@ export class WadFile {
         this._wadLoadError = errMsg;
     }
 
-    private get wadFile() {
+    private get wadFile(): ArrayBuffer {
         return this._wadFile;
     }
 
@@ -87,41 +106,42 @@ export class WadFile {
         this._wadFile = file;
     }
 
-    get wadFileLength() {
+    get wadFileLength(): number {
         return this._wadFile.byteLength;
     }
 
-    private get fileLoaded() {
+    private get fileLoaded(): boolean {
         return this.wadLoadAttempted && this.wadLoaded && this.wadFile.byteLength > 0;
     }
 
-    public loadFile(file: File, callback?: (success: boolean, err?: any) => void) {
+    public loadFile(file: File, callback?: (success: boolean, err?: string) => void): void {
         this.wadLoadAttempted = true;
-        this._wadStruct = { ...defaultWad };
+        this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
         this._fileUrl = file.name;
         this._wadFile = new ArrayBuffer(0);
         try {
-            file.arrayBuffer().then((buf) => {
-                this.wadFile = buf;
-                this.wadLoaded = true;
-                this.sendEvent(WadFileEvent.FILE_LOADED);
-                if (callback !== undefined) callback(true);
-            }).catch((e) => {
-                console.error(e);
-                this.wadLoadError = (e as Error).message;
-                if (callback !== undefined) callback(false, e);
-            });
-        }
-        catch (e) {
+            file.arrayBuffer()
+                .then((buf) => {
+                    this.wadFile = buf;
+                    this.wadLoaded = true;
+                    this.sendEvent(WadFileEvent.FILE_LOADED);
+                    if (callback !== undefined) callback(true);
+                })
+                .catch((e) => {
+                    console.error(e);
+                    this.wadLoadError = (e as Error).message;
+                    if (callback !== undefined) callback(false, e);
+                });
+        } catch (e) {
             console.error(e);
             this.wadLoadError = (e as Error).message;
-            if (callback !== undefined) callback(false, e);
+            if (callback !== undefined) callback(false, this.wadLoadError);
         }
     }
 
-    public loadFileFromUrl(fileUrl: string, callback?: (success: boolean, err?: any) => void) {
+    public loadFileFromUrl(fileUrl: string, callback?: (success: boolean, err?: string) => void): void {
         this.wadLoadAttempted = true;
-        this._wadStruct = { ...defaultWad };
+        this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
         this._fileUrl = fileUrl;
         this._wadFile = new ArrayBuffer(0);
         fetch(fileUrl)
@@ -131,26 +151,26 @@ export class WadFile {
                     this.wadLoaded = true;
                     this.sendEvent(WadFileEvent.FILE_LOADED);
                     if (callback !== undefined) callback(true);
-                }
-                catch (e) {
+                } catch (e) {
                     console.error(e);
                     this.wadLoadError = (e as Error).message;
-                    if (callback !== undefined) callback(false, e);
+                    if (callback !== undefined) callback(false, this.wadLoadError);
                 }
-            }).catch((e) => {
+            })
+            .catch((e) => {
                 console.error(e);
                 this.wadLoadError = (e as Error).message;
-                if (callback !== undefined) callback(false, e);
+                if (callback !== undefined) callback(false, this.wadLoadError);
             });
     }
 
     public get header(): WadHeader | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.header) return this._wadStruct.header;
+        if (this._wadStruct.header != null) return this._wadStruct.header;
         const view = new Uint8Array(this.wadFile, 0, 12);
         const type: WadType = utf8ArrayToStr(view.subarray(0, 4)) as WadType;
         if (type !== WadType.IWAD && type !== WadType.PWAD) {
-            console.error("Loaded file is not of type WAD:", type);
+            console.error('Loaded file is not of type WAD:', type);
             return null;
         }
         const directoryEntryCount: number = new Int32Array(view.buffer.slice(4, 8))[0];
@@ -158,30 +178,30 @@ export class WadFile {
         const header: WadHeader = {
             type,
             directoryEntryCount,
-            directoryLocation
-        }
+            directoryLocation,
+        };
         this.sendEvent(WadFileEvent.HEADER_PARSED, `Header parsed for ${this._fileUrl}`);
         this.setHeader(header);
         return header;
     }
 
-    private setHeader(header: WadHeader) {
+    private setHeader(header: WadHeader): void {
         this._wadStruct.header = header;
     }
 
     public get directory(): WadDirectory | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.directory) return this._wadStruct.directory;
-        let header: WadHeader | null = this.header;
-        if (!header) return null;
+        if (this._wadStruct.directory != null) return this._wadStruct.directory;
+        const header: WadHeader | null = this.header;
+        if (header == null) return null;
 
         const directoryEntryLength = 16;
         const directory: WadDirectory = [];
         const view = new Uint8Array(
             this.wadFile.slice(
                 header.directoryLocation,
-                header.directoryLocation + header.directoryEntryCount * directoryEntryLength
-            )
+                header.directoryLocation + header.directoryEntryCount * directoryEntryLength,
+            ),
         );
         for (let i = 0; i < header.directoryEntryCount; i++) {
             const viewStart = i * directoryEntryLength;
@@ -195,15 +215,15 @@ export class WadFile {
         return directory;
     }
 
-    private setDirectory(dir: WadDirectory) {
+    private setDirectory(dir: WadDirectory): void {
         this._wadStruct.directory = dir;
     }
 
-    public get mapGroups() {
+    public get mapGroups(): WadMapGroupList | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.mapGroups) return this._wadStruct.mapGroups;
+        if (this._wadStruct.mapGroups != null) return this._wadStruct.mapGroups;
         const dir: WadDirectory | null = this.directory;
-        if (!dir) return null;
+        if (dir == null) return null;
 
         let foundLumps: MapGroupDirectory = [];
         let currentMapName: string | null = null;
@@ -214,11 +234,9 @@ export class WadFile {
             if (isValid && !currentMapName) {
                 currentMapName = arr[idx - 1].lumpName;
                 foundLumps.push(entry);
-            }
-            else if (isValid && currentMapName) {
+            } else if (isValid && currentMapName) {
                 foundLumps.push(entry);
-            }
-            else if (!isValid && currentMapName) {
+            } else if (!isValid && currentMapName) {
                 mapGroups.push({ name: currentMapName, lumps: foundLumps });
                 currentMapName = null;
                 foundLumps = [];
@@ -229,11 +247,11 @@ export class WadFile {
         return mapGroups;
     }
 
-    private setMapGroups(groups: WadMapGroupList) {
+    private setMapGroups(groups: WadMapGroupList): void {
         this._wadStruct.mapGroups = groups;
     }
 
-    private getMapThings(start: number, size: number) {
+    private getMapThings(start: number, size: number): WadMapThing[] {
         const things: WadMapThing[] = [];
         const thingEntryLength = 10;
         const thingCount = size / thingEntryLength;
@@ -243,36 +261,55 @@ export class WadFile {
             const xPos = new Int16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
             const yPos = new Int16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
             const angle = new Int16Array(view.buffer.slice(viewStart + 4, viewStart + 6))[0];
-            const thingType: WadThingType = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
-            const thingTypeString = WadThing[thingType];
+            const thingType: WadThing = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
+            const thingTypeString = WadThingDict[thingType] as WadThingType;
+            const thingGroup = getWadMapThingGroup(thingTypeString);
             const flags = new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 10))[0];
             const flagsString = extractWadMapThingFlags(flags);
-            things.push({ xPos, yPos, angle, thingType, flags, thingTypeString, flagsString });
+            things.push({
+                xPos,
+                yPos,
+                angle,
+                thingType,
+                flags,
+                thingTypeString,
+                flagsString,
+                thingGroup,
+            });
         }
         return things;
     }
 
-    private getMapLinedefs(start: number, size: number) {
+    private getMapLinedefs(start: number, size: number): WadMapLinedef[] {
         const linedefs: WadMapLinedef[] = [];
         const linedefEntryLength = 14;
         const linedefCount = size / linedefEntryLength;
         const view = new Uint8Array(this.wadFile.slice(start, start + size));
         for (let i = 0; i < linedefCount; i++) {
             const viewStart = i * linedefEntryLength;
-            const start = new Int16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
-            const end = new Int16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
+            const start = new Uint16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
+            const end = new Uint16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
             const flags = new Int16Array(view.buffer.slice(viewStart + 4, viewStart + 6))[0];
             const flagsString = extractWadMapLinedefFlags(flags);
             const specialType = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
             const sectorTag = new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 10))[0];
             const frontSideDef = new Int16Array(view.buffer.slice(viewStart + 10, viewStart + 12))[0];
             const backSideDef = new Int16Array(view.buffer.slice(viewStart + 12, viewStart + 14))[0];
-            linedefs.push({ start, end, flags, flagsString, specialType, sectorTag, frontSideDef, backSideDef });
+            linedefs.push({
+                start,
+                end,
+                flags,
+                flagsString,
+                specialType,
+                sectorTag,
+                frontSideDef,
+                backSideDef,
+            });
         }
         return linedefs;
     }
 
-    private getMapSidedefs(start: number, size: number) {
+    private getMapSidedefs(start: number, size: number): WadMapSidedef[] {
         const sidedefs: WadMapSidedef[] = [];
         const sidedefEntryLength = 30;
         const sidedefCount = size / sidedefEntryLength;
@@ -286,12 +323,19 @@ export class WadFile {
             const middleTex = utf8ArrayToStr(view.subarray(viewStart + 20, viewStart + 28));
             const sector = new Int16Array(view.buffer.slice(viewStart + 28, viewStart + 30))[0];
 
-            sidedefs.push({ xOffset, yOffset, upperTex, lowerTex, middleTex, sector });
+            sidedefs.push({
+                xOffset,
+                yOffset,
+                upperTex,
+                lowerTex,
+                middleTex,
+                sector,
+            });
         }
         return sidedefs;
     }
 
-    private getMapVertices(start: number, size: number) {
+    private getMapVertices(start: number, size: number): WadMapVertex[] {
         const vertices: WadMapVertex[] = [];
         const vertexEntryLength = 4;
         const vertexCount = size / vertexEntryLength;
@@ -306,7 +350,7 @@ export class WadFile {
         return vertices;
     }
 
-    private getMapSegments(start: number, size: number) {
+    private getMapSegments(start: number, size: number): WadMapSegment[] {
         const segments: WadMapSegment[] = [];
         const segmentEntryLength = 12;
         const segmentCount = size / segmentEntryLength;
@@ -325,7 +369,7 @@ export class WadFile {
         return segments;
     }
 
-    private getMapSubSectors(start: number, size: number) {
+    private getMapSubSectors(start: number, size: number): WadMapSubSector[] {
         const subSectors: WadMapSubSector[] = [];
         const subSectorEntryLength = 4;
         const subSectorCount = size / subSectorEntryLength;
@@ -340,7 +384,7 @@ export class WadFile {
         return subSectors;
     }
 
-    private getMapNodes(start: number, size: number) {
+    private getMapNodes(start: number, size: number): WadMapNode[] {
         const nodes: WadMapNode[] = [];
         const nodeEntryLength = 28;
         const nodeCount = size / nodeEntryLength;
@@ -354,7 +398,7 @@ export class WadFile {
                 val = rawChild & ~mask;
             }
             return [val, type];
-        }
+        };
         for (let i = 0; i < nodeCount; i++) {
             if (view.buffer.slice(i * nodeEntryLength, i * nodeEntryLength + 28).byteLength !== 28) continue;
             try {
@@ -364,9 +408,19 @@ export class WadFile {
                 const xPartChange = new Int16Array(view.buffer.slice(viewStart + 4, viewStart + 6))[0];
                 const yPartChange = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
                 const rightBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 16)));
-                const rightBBox = { top: rightBBoxRaw[0], bottom: rightBBoxRaw[1], left: rightBBoxRaw[2], right: rightBBoxRaw[3] };
+                const rightBBox = {
+                    top: rightBBoxRaw[0],
+                    bottom: rightBBoxRaw[1],
+                    left: rightBBoxRaw[2],
+                    right: rightBBoxRaw[3],
+                };
                 const leftBBoxRaw = Array.from(new Int16Array(view.buffer.slice(viewStart + 16, viewStart + 24)));
-                const leftBBox = { top: leftBBoxRaw[0], bottom: leftBBoxRaw[1], left: leftBBoxRaw[2], right: leftBBoxRaw[3] };
+                const leftBBox = {
+                    top: leftBBoxRaw[0],
+                    bottom: leftBBoxRaw[1],
+                    left: leftBBoxRaw[2],
+                    right: leftBBoxRaw[3],
+                };
                 const rightChildRaw = new Uint16Array(view.buffer.slice(viewStart + 24, viewStart + 26))[0];
                 const leftChildRaw = new Uint16Array(view.buffer.slice(viewStart + 26, viewStart + 28))[0];
                 const rightChildValues = getChildValues(rightChildRaw);
@@ -377,21 +431,29 @@ export class WadFile {
                 const leftChildType = leftChildValues[1];
 
                 nodes.push({
-                    xPartStart, yPartStart, xPartChange, yPartChange,
-                    rightBBoxRaw, leftBBoxRaw, rightChildRaw, leftChildRaw,
-                    rightBBox, leftBBox, leftChild, leftChildType,
-                    rightChild, rightChildType
+                    xPartStart,
+                    yPartStart,
+                    xPartChange,
+                    yPartChange,
+                    rightBBoxRaw,
+                    leftBBoxRaw,
+                    rightChildRaw,
+                    leftChildRaw,
+                    rightBBox,
+                    leftBBox,
+                    leftChild,
+                    leftChildType,
+                    rightChild,
+                    rightChildType,
                 });
-            }
-            catch (e) {
+            } catch (e) {
                 console.error(e);
             }
-
         }
         return nodes;
     }
 
-    private getMapSectors(start: number, size: number) {
+    private getMapSectors(start: number, size: number): WadMapSector[] {
         const sectors: WadMapSector[] = [];
         const sectorEntryLength = 26;
         const sectorCount = size / sectorEntryLength;
@@ -406,30 +468,39 @@ export class WadFile {
             const specialType = new Int16Array(view.buffer.slice(viewStart + 22, viewStart + 24))[0];
             const tag = new Int16Array(view.buffer.slice(viewStart + 24, viewStart + 26))[0];
 
-            sectors.push({ floorHeight, ceilingHeight, floorTex, ceilingTex, lightLevel, specialType, tag });
+            sectors.push({
+                floorHeight,
+                ceilingHeight,
+                floorTex,
+                ceilingTex,
+                lightLevel,
+                specialType,
+                tag,
+            });
         }
         return sectors;
     }
 
-    private getMapRejectTable(start: number, size: number, sectorCount: number) {
+    private getMapRejectTable(start: number, size: number, sectorCount: number): WadMapRejectTable {
         const tableToWrite = Array(sectorCount).fill(Array(sectorCount).fill(false)).flat();
         const view = new Uint8Array(this.wadFile.slice(start, start + size));
 
         for (let i = 0; i < size; i++) {
             let rawBinary = view[i].toString(2);
-            rawBinary = "00000000".substring(0, 8 - rawBinary.length) + rawBinary;
-            const bitsToWrite = Array.from(rawBinary).reverse().map(v => v === '1' ? true : false);
+            rawBinary = '00000000'.substring(0, 8 - rawBinary.length) + rawBinary;
+            const bitsToWrite = Array.from(rawBinary)
+                .reverse()
+                .map((v) => v === '1');
             for (let j = 0; j < bitsToWrite.length; j++) {
                 if (i * bitsToWrite.length + j < tableToWrite.length) {
                     tableToWrite[i * bitsToWrite.length + j] = bitsToWrite[j];
                 }
-
             }
         }
 
         const table: WadMapRejectTable = [];
         let tempTable = [];
-        while (tableToWrite.length) {
+        while (tableToWrite.length > 0) {
             tempTable.push(tableToWrite.shift());
             if (tempTable.length === sectorCount) {
                 table.push(tempTable);
@@ -440,8 +511,8 @@ export class WadFile {
         return table;
     }
 
-    private getMapBlockmap(start: number, size: number) {
-        const blockmap: WadMapBlockMap = { ...defaultWadMapBlockmap };
+    private getMapBlockmap(start: number, size: number): WadMapBlockMap {
+        const blockmap: WadMapBlockMap = JSON.parse(JSON.stringify(defaultWadMapBlockmap));
         const view = new Uint8Array(this.wadFile.slice(start, start + size));
 
         const xOrigin = new Int16Array(view.buffer.slice(0, 2))[0];
@@ -460,7 +531,7 @@ export class WadFile {
             const baseOffset = 8 + i * 2;
             const byte0 = new Uint8Array(view.buffer.slice(baseOffset, baseOffset + 1))[0];
             const byte1 = new Uint8Array(view.buffer.slice(baseOffset + 1, baseOffset + 2))[0];
-            offsets.push((((byte1 & 0xFF) << 8) | (byte0 & 0xFF)) * 2);
+            offsets.push((((byte1 & 0xff) << 8) | (byte0 & 0xff)) * 2);
         }
         blockmap.offsets = offsets;
 
@@ -472,13 +543,14 @@ export class WadFile {
             if (i < offsets.length - 1) {
                 stopPoint = offsets[i + 1];
                 readLength = stopPoint - startPoint;
-            }
-            else {
+            } else {
                 let lastByte = 0;
                 let readBytesCount = 0;
                 while (lastByte !== 65535) {
                     readBytesCount += 2;
-                    lastByte = new Uint16Array(view.buffer.slice(startPoint + readBytesCount, startPoint + readBytesCount + 2))[0];
+                    lastByte = new Uint16Array(
+                        view.buffer.slice(startPoint + readBytesCount, startPoint + readBytesCount + 2),
+                    )[0];
                 }
                 readLength = readBytesCount + 2;
             }
@@ -487,7 +559,7 @@ export class WadFile {
             for (let j = 0; j < readLength; j += 2) {
                 linesOfBlock.push(new Uint16Array(view.buffer.slice(startPoint + j, startPoint + j + 2))[0]);
             }
-            linesOfBlock = linesOfBlock.filter(l => l !== 0 && l !== 65535);
+            linesOfBlock = linesOfBlock.filter((l) => l !== 0 && l !== 65535);
             blockList.push(linesOfBlock);
         }
         blockmap.blockList = blockList;
@@ -496,75 +568,106 @@ export class WadFile {
 
     public get maps(): WadMapList | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.maps) return this._wadStruct.maps;
+        if (this._wadStruct.maps != null) return this._wadStruct.maps;
         const mapGroups: WadMapGroupList | null = this.mapGroups;
-        if (!mapGroups) return null;
+        if (mapGroups == null) return null;
         const maps: WadMapList = [];
-        mapGroups.forEach((mapGroup, idx) => {
+        mapGroups.forEach((mapGroup) => {
             const map = { ...defaultWadMap };
             map.name = mapGroup.name;
 
-            const thingLump = mapGroup.lumps.find(lump => lump.lumpName === 'THINGS');
-            if (thingLump) {
+            const thingLump = mapGroup.lumps.find((lump) => lump.lumpName === 'THINGS');
+            if (thingLump != null) {
                 map.things = this.getMapThings(thingLump.lumpLocation, thingLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_THINGS_PARSED, `Things parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_THINGS_PARSED,
+                    `Things parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const linedefLump = mapGroup.lumps.find(lump => lump.lumpName === 'LINEDEFS');
-            if (linedefLump) {
+            const linedefLump = mapGroup.lumps.find((lump) => lump.lumpName === 'LINEDEFS');
+            if (linedefLump != null) {
                 map.linedefs = this.getMapLinedefs(linedefLump.lumpLocation, linedefLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_LINEDEFS_PARSED, `Linedefs parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_LINEDEFS_PARSED,
+                    `Linedefs parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const sidedefLump = mapGroup.lumps.find(lump => lump.lumpName === 'SIDEDEFS');
-            if (sidedefLump) {
+            const sidedefLump = mapGroup.lumps.find((lump) => lump.lumpName === 'SIDEDEFS');
+            if (sidedefLump != null) {
                 map.sidedefs = this.getMapSidedefs(sidedefLump.lumpLocation, sidedefLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_SIDEDEFS_PARSED, `Sidedefs parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_SIDEDEFS_PARSED,
+                    `Sidedefs parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const verticesLump = mapGroup.lumps.find(lump => lump.lumpName === 'VERTEXES');
-            if (verticesLump) {
+            const verticesLump = mapGroup.lumps.find((lump) => lump.lumpName === 'VERTEXES');
+            if (verticesLump != null) {
                 map.vertices = this.getMapVertices(verticesLump.lumpLocation, verticesLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_VERTICES_PARSED, `Vertices parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_VERTICES_PARSED,
+                    `Vertices parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const segmentsLump = mapGroup.lumps.find(lump => lump.lumpName === 'SEGS');
-            if (segmentsLump) {
+            const segmentsLump = mapGroup.lumps.find((lump) => lump.lumpName === 'SEGS');
+            if (segmentsLump != null) {
                 map.segments = this.getMapSegments(segmentsLump.lumpLocation, segmentsLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_SEGMENTS_PARSED, `Segments parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_SEGMENTS_PARSED,
+                    `Segments parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const subSectorsLump = mapGroup.lumps.find(lump => lump.lumpName === 'SSECTORS');
-            if (subSectorsLump) {
+            const subSectorsLump = mapGroup.lumps.find((lump) => lump.lumpName === 'SSECTORS');
+            if (subSectorsLump != null) {
                 map.subSectors = this.getMapSubSectors(subSectorsLump.lumpLocation, subSectorsLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_SUBSECTORS_PARSED, `SubSectors parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_SUBSECTORS_PARSED,
+                    `SubSectors parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
-            const nodesLump = mapGroup.lumps.find(lump => lump.lumpName === 'NODES');
-            if (nodesLump) {
+            const nodesLump = mapGroup.lumps.find((lump) => lump.lumpName === 'NODES');
+            if (nodesLump != null) {
                 map.nodes = this.getMapNodes(nodesLump.lumpLocation, nodesLump.lumpSize);
                 this.sendEvent(WadFileEvent.MAP_NODES_PARSED, `Nodes parsed for ${mapGroup.name} in ${this._fileUrl}`);
             }
 
-            const sectorLump = mapGroup.lumps.find(lump => lump.lumpName === 'SECTORS');
-            if (sectorLump) {
+            const sectorLump = mapGroup.lumps.find((lump) => lump.lumpName === 'SECTORS');
+            if (sectorLump != null) {
                 map.sectors = this.getMapSectors(sectorLump.lumpLocation, sectorLump.lumpSize);
-                this.sendEvent(WadFileEvent.MAP_SECTORS_PARSED, `Sectors parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                this.sendEvent(
+                    WadFileEvent.MAP_SECTORS_PARSED,
+                    `Sectors parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                );
             }
 
             if (this._parseRejects) {
-                const rejectLump = mapGroup.lumps.find(lump => lump.lumpName === 'REJECT');
-                if (rejectLump) {
-                    map.rejectTable = this.getMapRejectTable(rejectLump.lumpLocation, rejectLump.lumpSize, map.sectors.length);
-                    this.sendEvent(WadFileEvent.MAP_REJECT_TABLE_PARSED, `RejectTable parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                const rejectLump = mapGroup.lumps.find((lump) => lump.lumpName === 'REJECT');
+                if (rejectLump != null) {
+                    map.rejectTable = this.getMapRejectTable(
+                        rejectLump.lumpLocation,
+                        rejectLump.lumpSize,
+                        map.sectors.length,
+                    );
+                    this.sendEvent(
+                        WadFileEvent.MAP_REJECT_TABLE_PARSED,
+                        `RejectTable parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                    );
                 }
             }
 
             if (this._parseBlockmap) {
-                const blockmapLump = mapGroup.lumps.find(lump => lump.lumpName === 'BLOCKMAP');
-                if (blockmapLump) {
+                const blockmapLump = mapGroup.lumps.find((lump) => lump.lumpName === 'BLOCKMAP');
+                if (blockmapLump != null) {
                     map.blockMap = this.getMapBlockmap(blockmapLump.lumpLocation, blockmapLump.lumpSize);
-                    this.sendEvent(WadFileEvent.MAP_BLOCKMAP_PARSED, `BlockMap parsed for ${mapGroup.name} in ${this._fileUrl}`);
+                    this.sendEvent(
+                        WadFileEvent.MAP_BLOCKMAP_PARSED,
+                        `BlockMap parsed for ${mapGroup.name} in ${this._fileUrl}`,
+                    );
                 }
             }
 
@@ -575,29 +678,31 @@ export class WadFile {
         return maps;
     }
 
-    private setMaps(maps: WadMapList) {
+    private setMaps(maps: WadMapList): void {
         this._wadStruct.maps = maps;
     }
 
     public get playpal(): WadPlayPal | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.playPal) return this._wadStruct.playPal;
+        if (this._wadStruct.playPal != null) return this._wadStruct.playPal;
         const dir: WadDirectory | null = this.directory;
-        if (!dir) return null;
-        const playPalLump = dir.find(e => e.lumpName === playPalLumpName);
-        if (!playPalLump) {
+        if (dir == null) return null;
+        const playPalLump = dir.find((e) => e.lumpName === playPalLumpName);
+        if (playPalLump == null) {
             this.setPlaypal(preFilledPlayPal);
             return preFilledPlayPal;
         }
 
-        const playpal = { ...defaultPlaypal };
-        const view = new Uint8Array(this.wadFile.slice(playPalLump.lumpLocation, playPalLump.lumpLocation + playPalLump.lumpSize));
+        const playpal = JSON.parse(JSON.stringify(defaultPlaypal));
+        const view = new Uint8Array(
+            this.wadFile.slice(playPalLump.lumpLocation, playPalLump.lumpLocation + playPalLump.lumpSize),
+        );
         const paletteSize = 768;
         const paletteCount = 14;
         const rgbToHex = (r: number, g: number, b: number): string => {
-            //eslint-disable-next-line no-mixed-operators
-            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
-        }
+            // eslint-disable-next-line no-mixed-operators
+            return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+        };
         for (let i = 0; i < paletteCount; i++) {
             const rawPaletteArr: number[] = [];
             const typedPaletteArr: WadPlayPalTypedEntry = [];
@@ -609,7 +714,7 @@ export class WadFile {
                     r: colorBytes[0],
                     g: colorBytes[1],
                     b: colorBytes[2],
-                    hex: rgbToHex(colorBytes[0], colorBytes[1], colorBytes[2])
+                    hex: rgbToHex(colorBytes[0], colorBytes[1], colorBytes[2]),
                 });
             }
             playpal.rawPlaypal.push(rawPaletteArr);
@@ -620,20 +725,22 @@ export class WadFile {
         return playpal;
     }
 
-    private setPlaypal(playpal: WadPlayPal) {
+    private setPlaypal(playpal: WadPlayPal): void {
         this._wadStruct.playPal = playpal;
     }
 
     public get colormap(): WadColorMap | null {
         if (!this.fileLoaded) return null;
-        if (this._wadStruct.colorMap) return this._wadStruct.colorMap;
+        if (this._wadStruct.colorMap != null) return this._wadStruct.colorMap;
         const dir: WadDirectory | null = this.directory;
-        if (!dir) return null;
-        const colorMapLump = dir.find(e => e.lumpName === colorMapLumpName);
-        if (!colorMapLump) return null;
+        if (dir == null) return null;
+        const colorMapLump = dir.find((e) => e.lumpName === colorMapLumpName);
+        if (colorMapLump == null) return null;
 
         const colorMap = [];
-        const view = new Uint8Array(this.wadFile.slice(colorMapLump.lumpLocation, colorMapLump.lumpLocation + colorMapLump.lumpSize));
+        const view = new Uint8Array(
+            this.wadFile.slice(colorMapLump.lumpLocation, colorMapLump.lumpLocation + colorMapLump.lumpSize),
+        );
         const colorMapSize = 256;
         const colorMapCount = 34;
         for (let i = 0; i < colorMapCount; i++) {
@@ -642,16 +749,14 @@ export class WadFile {
                 const offset = i * colorMapSize + j;
                 colorMapArr.push(new Uint8Array(view.buffer.slice(offset, offset + 1))[0]);
             }
-            colorMap.push(colorMapArr)
+            colorMap.push(colorMapArr);
         }
         this.sendEvent(WadFileEvent.COLORMAP_PARSED, `ColorMap parsed for ${this._fileUrl}`);
         this.setColormap(colorMap);
         return colorMap;
     }
 
-    private setColormap(colorMap: WadColorMap) {
+    private setColormap(colorMap: WadColorMap): void {
         this._wadStruct.colorMap = colorMap;
     }
-
-
 }

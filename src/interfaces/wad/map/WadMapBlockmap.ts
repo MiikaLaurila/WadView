@@ -13,5 +13,5 @@ export const defaultWadMapBlockmap: Readonly<WadMapBlockMap> = {
     columns: 0,
     rows: 0,
     offsets: [],
-    blockList: []
-}
+    blockList: [],
+};

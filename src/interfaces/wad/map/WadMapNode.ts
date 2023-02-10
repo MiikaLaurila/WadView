@@ -1,4 +1,4 @@
-import { WadMapBBox } from "./WadMapBBox";
+import { type WadMapBBox } from './WadMapBBox';
 
 export enum WadMapNodeChildType {
     SUBNODE = 'SUBNODE',

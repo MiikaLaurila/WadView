@@ -5,7 +5,7 @@ export enum SelectedPageType {
     COLORMAP,
     HEADER,
     MAPGROUPS,
-    DIRECTORY
+    DIRECTORY,
 }
 
 export type SelectedPageInfo = [SelectedPageType, string];

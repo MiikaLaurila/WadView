@@ -1,8 +1,8 @@
-import { WadDirectory } from "./WadDirectory";
-import { WadHeader } from "./WadHeader";
-import { WadMapGroupList, WadMapList } from "./map/WadMap";
-import { WadPlayPal } from "./WadPlayPal";
-import { WadColorMap } from "./WadColorMap";
+import { type WadDirectory } from './WadDirectory';
+import { type WadHeader } from './WadHeader';
+import { type WadMapGroupList, type WadMapList } from './map/WadMap';
+import { type WadPlayPal } from './WadPlayPal';
+import { type WadColorMap } from './WadColorMap';
 
 export interface Wad {
     header: WadHeader;
@@ -20,4 +20,4 @@ export const defaultWad: Readonly<Partial<Wad>> = {
     maps: undefined,
     playPal: undefined,
     colorMap: undefined,
-}
+};

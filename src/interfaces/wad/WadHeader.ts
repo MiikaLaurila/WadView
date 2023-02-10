@@ -1,6 +1,6 @@
 export enum WadType {
     PWAD = 'PWAD',
-    IWAD = 'IWAD'
+    IWAD = 'IWAD',
 }
 export interface WadHeader {
     type: WadType;
@@ -12,4 +12,4 @@ export const defaultWadHeader: Readonly<WadHeader> = {
     type: WadType.PWAD,
     directoryEntryCount: 0,
     directoryLocation: 0,
-}
+};

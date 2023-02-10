@@ -2,7 +2,7 @@ export interface WadMapLinedef {
     start: number;
     end: number;
     flags: number;
-    flagsString: string[];
+    flagsString: WadMapLinedefFlag[];
     specialType: number;
     sectorTag: number;
     frontSideDef: number;
@@ -21,13 +21,15 @@ export enum WadMapLinedefFlags {
     ALWAYS_ON_MAP = 0x0100,
 }
 
-export const extractWadMapLinedefFlags = (flags: number) => {
-    const foundFlags: string[] = [];
-    const testFlag = (flag: WadMapLinedefFlags) => {
-        if (flags & flag) foundFlags.push(WadMapLinedefFlags[flag]);
-    }
-    for (let f in WadMapLinedefFlags) {
-        testFlag(WadMapLinedefFlags[f as keyof typeof WadMapLinedefFlags])
+export type WadMapLinedefFlag = keyof typeof WadMapLinedefFlags;
+
+export const extractWadMapLinedefFlags = (flags: number): WadMapLinedefFlag[] => {
+    const foundFlags: WadMapLinedefFlag[] = [];
+    const testFlag = (flag: WadMapLinedefFlags): void => {
+        if (flags & flag) foundFlags.push(WadMapLinedefFlags[flag] as WadMapLinedefFlag);
+    };
+    for (const f in WadMapLinedefFlags) {
+        testFlag(WadMapLinedefFlags[f as WadMapLinedefFlag]);
     }
     return foundFlags;
-}
+};
