@@ -1,7 +1,19 @@
+import { styled } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { type Point } from '../interfaces/Point';
 import { type WadMap } from '../interfaces/wad/map/WadMap';
-import { type WadMapThing, type WadMapThingGroupRenderable } from '../interfaces/wad/map/WadMapThing';
+import {
+    WadThingAmmoKeys,
+    WadThingArtifactKeys,
+    WadThingDecorationKeys,
+    WadThingMonsterKeys,
+    WadThingObstacleKeys,
+    WadThingOtherKeys,
+    WadThingPowerupKeys,
+    WadThingWeaponKeys,
+    type WadMapThing,
+    type WadMapThingGroupRenderable,
+} from '../interfaces/wad/map/WadMapThing';
 import { type WadMapVertex } from '../interfaces/wad/map/WadMapVertex';
 import { type WadPlayPalTypedEntry } from '../interfaces/wad/WadPlayPal';
 import { defaultSidebarWidth, defaultTopbarHeight } from '../library/constants';
@@ -107,8 +119,10 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         };
         const scalar = Math.min(diff(bounds.top, bounds.bottom), 5000) / lastDimensions.height;
         const circleSize = Math.max(Math.round(16 / scalar), 2);
+        const onlyDots = 16 / scalar < 2;
+        const dotSize = 16 / (diff(bounds.top, bounds.bottom) / Math.min(dim.height, dim.width));
         const things = mapData.things.filter(thingIsRenderable).filter((t) => {
-            const magicScalar = 194 * (3 / circleSize);
+            const magicScalar = 194 * (onlyDots ? 3 / (dotSize * 0.5) : 3 / circleSize);
             const mapHeight = diff(bounds.top, bounds.bottom);
             if (pointInRadius(newPoint.x, newPoint.y, t.xPos, t.yPos, mapHeight / magicScalar)) {
                 return true;
@@ -276,6 +290,9 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
             lastBounds = JSON.parse(JSON.stringify(bounds));
             lastCanvasHeight = canvas.height;
         }
+
+        const onlyDots = 16 / scalar < 2;
+        const dotSize = 32 / (diff(bounds.top, bounds.bottom) / Math.min(dim.height, dim.width));
         const textSize = Math.max(Math.round(16 / scalar), 2);
         const circleSize = Math.max(Math.round(16 / scalar), 2);
         ctx.lineWidth = lineWidth;
@@ -292,23 +309,30 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
             y += canvasPadding;
 
             const color = getThingColor(thing.thingGroup as WadMapThingGroupRenderable);
-            ctx.beginPath();
-            ctx.font = `${textSize}px arial`;
-            ctx.strokeStyle = color;
-            ctx.arc(x, canvas.height - y, circleSize, 0, 2 * Math.PI);
-            ctx.stroke();
-            const text = thing.thingType.toString();
-            const textWidth = ctx.measureText(text).width;
-            const maxWidth = circleSize * 1.8;
-            if (maxWidth > textWidth) {
-                ctx.strokeText(text, x - textWidth / 2, canvas.height - y + textSize / 3, circleSize * 1.7);
+            if (onlyDots) {
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.fillRect(x - dotSize / 2, canvas.height - y - dotSize / 2, dotSize, dotSize);
+                ctx.stroke();
             } else {
-                ctx.strokeText(
-                    text,
-                    x - textWidth / 2 + (textWidth - maxWidth) / 2,
-                    canvas.height - y + textSize / 3,
-                    maxWidth,
-                );
+                ctx.beginPath();
+                ctx.font = `${textSize}px arial`;
+                ctx.strokeStyle = color;
+                ctx.arc(x, canvas.height - y, circleSize, 0, 2 * Math.PI);
+                ctx.stroke();
+                const text = thing.thingType.toString();
+                const textWidth = ctx.measureText(text).width;
+                const maxWidth = circleSize * 1.8;
+                if (maxWidth > textWidth) {
+                    ctx.strokeText(text, x - textWidth / 2, canvas.height - y + textSize / 3, circleSize * 1.7);
+                } else {
+                    ctx.strokeText(
+                        text,
+                        x - textWidth / 2 + (textWidth - maxWidth) / 2,
+                        canvas.height - y + textSize / 3,
+                        maxWidth,
+                    );
+                }
             }
         });
         return renderFull;
@@ -386,6 +410,45 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         });
     };
 
+    const PNoMargin = styled('p')(() => ({
+        margin: 0,
+        padding: 0,
+    }));
+    const StatDiv = styled('div')(() => ({
+        paddingRight: '8px',
+        marginLeft: '8px',
+        borderRight: '1px solid black',
+        '&:first-of-type': {
+            marginLeft: 0,
+        },
+        '&:last-of-type': {
+            borderRight: 'unset',
+        },
+    }));
+
+    const getStatDiv = (header: string, keys: Readonly<string[]>): JSX.Element => {
+        const width = '150px';
+        return (
+            <StatDiv>
+                <PNoMargin style={{ fontWeight: 'bold' }}>
+                    <span style={{ display: 'inline-block', width }}>{header}</span>
+                    {props.mapData.things.filter((t) => keys.includes(t.thingTypeString)).length}
+                </PNoMargin>
+                {[...keys]
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((k) => {
+                        return (
+                            <PNoMargin key={k}>
+                                <span style={{ display: 'inline-block', width }}>
+                                    {k.toLocaleLowerCase().replaceAll('_', ' ')}
+                                </span>
+                                {props.mapData.things.filter((t) => t.thingTypeString === k).length}
+                            </PNoMargin>
+                        );
+                    })}
+            </StatDiv>
+        );
+    };
     return (
         <>
             <div style={{ margin: '20px' }}>
@@ -435,7 +498,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     }}
                 />
                 <p style={{ fontSize: '9px', margin: 0 }}>
-                    Shamelessly yoinked from
+                    Canvas pan/zoom shamelessly yoinked from
                     <a
                         href="https://gist.github.com/robinovitch61/483190546bf8f0617d2cd510f3b4b86d"
                         target="_blank"
@@ -444,6 +507,19 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                         @robinovitch61
                     </a>
                 </p>
+                <div style={{ fontSize: '12px' }}>
+                    <p style={{ fontWeight: 'bold', textDecoration: 'underline', fontSize: '16px' }}>STATS</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                        {getStatDiv('MONSTERS', WadThingMonsterKeys)}
+                        {getStatDiv('POWERUPS', WadThingPowerupKeys)}
+                        {getStatDiv('ARTIFACTS', WadThingArtifactKeys)}
+                        {getStatDiv('WEAPONS', WadThingWeaponKeys)}
+                        {getStatDiv('AMMO', WadThingAmmoKeys)}
+                        {getStatDiv('OTHER', WadThingOtherKeys)}
+                        {getStatDiv('OBSTACLES', WadThingObstacleKeys)}
+                        {getStatDiv('DECORATIONS', WadThingDecorationKeys)}
+                    </div>
+                </div>
             </div>
             {hoverData && hoverData.things.length > 0 && getHoverData(hoverData)}
         </>
