@@ -6,5 +6,4 @@ export interface WadMapSector {
     lightLevel: number;
     specialType: number;
     tag: number;
-
 }

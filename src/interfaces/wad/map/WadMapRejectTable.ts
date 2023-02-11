@@ -1,1 +1,1 @@
-export type WadMapRejectTable = Array<Array<boolean>>;
+export type WadMapRejectTable = boolean[][];

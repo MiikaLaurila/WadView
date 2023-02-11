@@ -56,5 +56,6 @@ module.exports = {
             },
         ],
         '@typescript-eslint/prefer-nullish-coalescing': 'off',
+        '@typescript-eslint/no-unused-vars': 'warn',
     },
 };

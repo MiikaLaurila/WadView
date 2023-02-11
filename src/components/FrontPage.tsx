@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { WadFile } from '../library/wad/wadFile';
 import { type WadFileEvent } from '../interfaces/wad/WadFileEvent';
-import { Box, Button, type ButtonProps, CircularProgress, CssBaseline, styled } from '@mui/material';
+import { Box, Button, type ButtonProps, CssBaseline, styled } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { SideMenu } from './SideMenu';
 import { TopBar } from './TopBar';
@@ -11,6 +11,13 @@ import { initialSelectedPage, type SelectedPageInfo, SelectedPageType } from '..
 import { PlayPal } from './PlayPal';
 import { ColorMap } from './ColorMap';
 import { AutoMap } from './AutoMap';
+import { HeaderPage } from './HeaderPage';
+import { type WadHeader } from '../interfaces/wad/WadHeader';
+import { type WadDirectory } from '../interfaces/wad/WadDirectory';
+import { type WadMapGroupList, type WadMapList } from '../interfaces/wad/map/WadMap';
+import { type WadPlayPal } from '../interfaces/wad/WadPlayPal';
+import { type WadColorMap } from '../interfaces/wad/WadColorMap';
+import { LoadingLog } from './LoadingLog';
 
 const LeftButton = styled((props: ButtonProps) => <Button {...props} />)(() => ({
     width: '100%',
@@ -19,54 +26,76 @@ const LeftButton = styled((props: ButtonProps) => <Button {...props} />)(() => (
 
 export const FrontPage: React.FC = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, setWadLoadSuccess] = useState(false);
+    const [, setWadLoadSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [lastEvent, setLastEvent] = useState<WadFileEvent | null>(null);
+    const [, setLastEvent] = useState<WadFileEvent | null>(null);
     const [selectedPage, setSelectedPage] = useState<SelectedPageInfo>(initialSelectedPage);
     const inputRef = useRef<HTMLInputElement | null>(null);
-
-    useEffect(() => {
-        // console.log(lastEvent);
-    }, [lastEvent]);
+    const eventLog = useRef<string[]>([]);
 
     const wadFileRef = useRef(
-        new WadFile(false, false, (e) => {
-            setLastEvent(e);
-            // console.log(e, '|', msg);
-        }),
+        new WadFile(
+            undefined,
+            false,
+            (e, msg) => {
+                setLastEvent(e);
+                eventLog.current.push(msg ?? e);
+            },
+        ),
     );
+
+    const headerRef = useRef<WadHeader | null>(null);
+    const directoryRef = useRef<WadDirectory | null>(null);
+    const mapGroupsRef = useRef<WadMapGroupList | null>(null);
+    const mapsRef = useRef<WadMapList | null>(null);
+    const playPalRef = useRef<WadPlayPal | null>(null);
+    const colorMapRef = useRef<WadColorMap | null>(null);
+
     const wadFile = wadFileRef.current;
     const doomUrl = './DOOM1.WAD';
-    const wadHeader = wadFile.header;
-    const wadDirectory = wadFile.directory;
-    const mapGroups = wadFile.mapGroups;
-    const maps = wadFile.maps;
-    const playPal = wadFile.playpal;
-    const colorMap = wadFile.colormap;
+
+    const onLoadWadFileSuccess = async (succ: boolean): Promise<void> => {
+        setWadLoadSuccess(succ);
+        const wadHeader = await wadFile.header();
+        if (wadHeader) headerRef.current = wadHeader;
+        const wadDirectory = await wadFile.directory();
+
+        if (wadDirectory) directoryRef.current = wadDirectory;
+        const mapGroups = await wadFile.mapGroups();
+
+        if (mapGroups) mapGroupsRef.current = mapGroups;
+        const maps = await wadFile.maps();
+
+        if (maps) mapsRef.current = maps;
+        const playPal = await wadFile.playpal();
+
+        if (playPal) playPalRef.current = playPal;
+        const colorMap = await wadFile.colormap();
+
+        if (colorMap) colorMapRef.current = colorMap;
+        eventLog.current.push('LOADING READY');
+        setLoading(false);
+    };
 
     const loadFileFromUrl = (url: string): void => {
+        eventLog.current = [];
         setLoading(true);
         setWadLoadSuccess(false);
         setSelectedPage(initialSelectedPage);
-        wadFile.loadFileFromUrl(url, (success) => {
-            setWadLoadSuccess(success);
-            setLoading(false);
-        });
+        wadFile.loadFileFromUrl(url, onLoadWadFileSuccess);
     };
 
     const loadFile = (f: File): void => {
+        eventLog.current = [];
         setLoading(true);
         setWadLoadSuccess(false);
         setSelectedPage(initialSelectedPage);
-        wadFile.loadFile(f, (success) => {
-            setWadLoadSuccess(success);
-            setLoading(false);
-        });
+        wadFile.loadFile(f, onLoadWadFileSuccess);
     };
 
     const getPlayPalContent = (): JSX.Element[] | null => {
-        if (!playPal) return null;
-        return playPal.typedPlaypal.map((p, idx) => {
+        if (!playPalRef.current) return null;
+        return playPalRef.current.typedPlaypal.map((p, idx) => {
             return (
                 <div style={{ display: 'inline-block' }} key={`${p[0].hex}_${idx}`}>
                     <span>Palette {idx}</span>
@@ -77,7 +106,9 @@ export const FrontPage: React.FC = () => {
     };
 
     const getColorMapContent = (): JSX.Element[] | null => {
-        if (!playPal || !colorMap) return null;
+        if (!playPalRef.current || !colorMapRef.current) return null;
+        const playPal = playPalRef.current;
+        const colorMap = colorMapRef.current;
         return playPal.typedPlaypal.map((p, idx) => {
             return (
                 <div style={{ display: 'inline-block' }} key={`${p[0].hex}_colormap${idx}`}>
@@ -89,8 +120,8 @@ export const FrontPage: React.FC = () => {
     };
 
     const getMapContent = (): JSX.Element | null => {
-        if (!maps || !playPal) return null;
-        const mapData = maps.find((m) => m.name === selectedPage[1]);
+        if (!mapsRef.current || !playPalRef.current) return null;
+        const mapData = mapsRef.current.find((m) => m.name === selectedPage[1]);
         if (!mapData) return null;
 
         const parseName = (): string => {
@@ -102,17 +133,21 @@ export const FrontPage: React.FC = () => {
 
         return (
             <div style={{ display: 'inline-block' }}>
-                <AutoMap mapData={mapData} playPal={playPal.typedPlaypal[0]} wadName={parseName()} />
+                <AutoMap mapData={mapData} playPal={playPalRef.current.typedPlaypal[0]} wadName={parseName()} />
             </div>
         );
+    };
+
+    const getHeaderContent = (): JSX.Element | null => {
+        if (headerRef.current) return <HeaderPage header={headerRef.current} />;
+        return null;
     };
 
     const getContentPage = (): React.ReactNode | null => {
         if (loading) {
             return (
-                <div style={{ textAlign: 'center', width: '100%' }}>
-                    <h1>Loading...</h1>
-                    <CircularProgress disableShrink={true} />
+                <div style={{ width: '100%', marginTop: '8px' }}>
+                    <LoadingLog log={eventLog.current} />
                 </div>
             );
         } else {
@@ -123,8 +158,14 @@ export const FrontPage: React.FC = () => {
                     return getColorMapContent();
                 case SelectedPageType.MAP:
                     return getMapContent();
+                case SelectedPageType.HEADER:
+                    return getHeaderContent();
                 default:
-                    return null;
+                    return (
+                        <div style={{ width: '100%', marginTop: '8px' }}>
+                            <LoadingLog log={eventLog.current} />
+                        </div>
+                    );
             }
         }
     };
@@ -133,11 +174,11 @@ export const FrontPage: React.FC = () => {
         <>
             <CssBaseline />
             <SideMenu>
-                {(wadHeader || wadDirectory || mapGroups) && (
+                {(headerRef.current || directoryRef.current || mapGroupsRef.current) && (
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>Meta</AccordionSummary>
                         <AccordionDetails>
-                            {wadHeader && (
+                            {headerRef.current && (
                                 <LeftButton
                                     onClick={() => {
                                         setSelectedPage([SelectedPageType.HEADER, 'Header data']);
@@ -146,7 +187,7 @@ export const FrontPage: React.FC = () => {
                                     Header
                                 </LeftButton>
                             )}
-                            {wadDirectory && (
+                            {directoryRef.current && (
                                 <LeftButton
                                     onClick={() => {
                                         setSelectedPage([SelectedPageType.DIRECTORY, 'Directory data']);
@@ -155,7 +196,7 @@ export const FrontPage: React.FC = () => {
                                     Directory
                                 </LeftButton>
                             )}
-                            {mapGroups && (
+                            {mapGroupsRef.current && (
                                 <LeftButton
                                     onClick={() => {
                                         setSelectedPage([SelectedPageType.MAPGROUPS, 'MapGroup Lumps']);
@@ -167,11 +208,11 @@ export const FrontPage: React.FC = () => {
                         </AccordionDetails>
                     </Accordion>
                 )}
-                {(playPal || colorMap) && (
+                {(playPalRef.current || colorMapRef.current) && (
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>Colors</AccordionSummary>
                         <AccordionDetails>
-                            {playPal && (
+                            {playPalRef.current && (
                                 <LeftButton
                                     onClick={() => {
                                         setSelectedPage([SelectedPageType.PLAYPAL, 'PLAYPAL']);
@@ -180,7 +221,7 @@ export const FrontPage: React.FC = () => {
                                     PlayPal
                                 </LeftButton>
                             )}
-                            {colorMap && (
+                            {colorMapRef.current && (
                                 <LeftButton
                                     onClick={() => {
                                         setSelectedPage([SelectedPageType.COLORMAP, 'COLORMAP']);
@@ -192,11 +233,11 @@ export const FrontPage: React.FC = () => {
                         </AccordionDetails>
                     </Accordion>
                 )}
-                {maps && (
+                {mapsRef.current && (
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>Maps</AccordionSummary>
                         <AccordionDetails>
-                            {maps?.map((m) => {
+                            {mapsRef.current?.map((m) => {
                                 return (
                                     <LeftButton
                                         key={m.name}

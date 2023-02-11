@@ -25,6 +25,8 @@ interface CanvasProps {
     showDifficulty: number;
     onHideDifficultyToggle: (toggled: number) => void;
     hideDifficulty: number;
+    onShowGridToggle: (toggle: boolean) => void;
+    showGrid: boolean;
 }
 
 interface Point {
@@ -49,18 +51,20 @@ function scalePoint(p1: Point, scale: number) {
     return { x: p1.x / scale, y: p1.y / scale };
 }
 
-const ZOOM_SENSITIVITY = 500; // bigger for lower zoom per scroll
+const ZOOM_SENSITIVITY = 0.25; // bigger for lower zoom per scroll
 
 export default function MovableCanvas(props: CanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
-    const [scale, setScale] = useState<number>(1);
     const [offset, setOffset] = useState<Point>(ORIGIN);
     const [mousePos, setMousePos] = useState<Point>(ORIGIN);
-    const [viewportTopLeft, setViewportTopLeft] = useState<Point>(ORIGIN);
+    const [readyForRender, setReadyForRender] = useState(false);
+    const viewportTopLeft = useRef<Point>(ORIGIN);
     const isResetRef = useRef<boolean>(false);
     const lastMousePosRef = useRef<Point>(ORIGIN);
     const lastOffsetRef = useRef<Point>(ORIGIN);
+    const zoomReady = useRef<boolean>(false);
+    const scale = useRef<number>(1);
 
     const {
         canvasHeight,
@@ -79,12 +83,18 @@ export default function MovableCanvas(props: CanvasProps) {
         showDifficulty,
         onHideDifficultyToggle,
         hideDifficulty,
+        onShowGridToggle: onDrawGridToggle,
+        showGrid: drawGrid,
     } = props;
 
     // update last offset
     useEffect(() => {
         lastOffsetRef.current = offset;
     }, [offset]);
+
+    useEffect(() => {
+        setReadyForRender(true);
+    }, [toggledThingGroups, showMultiPlayer, showDifficulty, hideDifficulty, drawGrid]);
 
     const saveCanvas = (fullRender: boolean) => {
         if (context) {
@@ -108,18 +118,19 @@ export default function MovableCanvas(props: CanvasProps) {
                 context.canvas.height = canvasHeight * ratio;
                 context.scale(ratio, ratio);
 
-                setScale(1);
+                scale.current = 1;
 
                 // reset state and refs
                 setContext(context);
                 setOffset(ORIGIN);
                 setMousePos(ORIGIN);
-                setViewportTopLeft(ORIGIN);
+                viewportTopLeft.current = ORIGIN;
                 lastOffsetRef.current = ORIGIN;
                 lastMousePosRef.current = ORIGIN;
 
                 // this thing is so multiple resets in a row don't clear canvas
                 isResetRef.current = true;
+                setReadyForRender(true);
             }
         },
         [canvasWidth, canvasHeight],
@@ -169,9 +180,9 @@ export default function MovableCanvas(props: CanvasProps) {
     // pan when offset or scale changes
     useLayoutEffect(() => {
         if (context && lastOffsetRef.current) {
-            const offsetDiff = scalePoint(diffPoints(offset, lastOffsetRef.current), scale);
+            const offsetDiff = scalePoint(diffPoints(offset, lastOffsetRef.current), scale.current);
             context.translate(offsetDiff.x, offsetDiff.y);
-            setViewportTopLeft((prevVal) => diffPoints(prevVal, offsetDiff));
+            viewportTopLeft.current = diffPoints(viewportTopLeft.current, offsetDiff);
             isResetRef.current = false;
         }
     }, [context, offset, scale]);
@@ -184,12 +195,14 @@ export default function MovableCanvas(props: CanvasProps) {
             // eslint-disable-next-line no-self-assign
             context.canvas.width = context.canvas.width;
             context.setTransform(storedTransform);
-            const fullRender = drawFunc(context.canvas, context, scale);
+            const fullRender = drawFunc(context.canvas, context, context.getTransform().a);
             if (fullRender) {
                 saveCanvas(fullRender);
             }
+            zoomReady.current = true;
+            setReadyForRender(false);
         }
-    }, [canvasWidth, canvasHeight, context, scale, offset, viewportTopLeft, props]);
+    }, [canvasWidth, canvasHeight, context, offset, readyForRender]);
 
     // add event listener on canvas for mouse position
     useEffect(() => {
@@ -248,21 +261,23 @@ export default function MovableCanvas(props: CanvasProps) {
         // before and after zoom is relatively the same position on the viewport
         function handleWheel(event: WheelEvent) {
             event.preventDefault();
-            if (context) {
-                const zoom = 1 - event.deltaY / ZOOM_SENSITIVITY;
+            if (context && zoomReady.current) {
+                const zoom = 1 - Math.sign(event.deltaY) * ZOOM_SENSITIVITY;
                 const viewportTopLeftDelta = {
-                    x: (mousePos.x / scale) * (1 - 1 / zoom),
-                    y: (mousePos.y / scale) * (1 - 1 / zoom),
+                    x: (mousePos.x / scale.current) * (1 - 1 / zoom),
+                    y: (mousePos.y / scale.current) * (1 - 1 / zoom),
                 };
-                const newViewportTopLeft = addPoints(viewportTopLeft, viewportTopLeftDelta);
+                const newViewportTopLeft = addPoints(viewportTopLeft.current, viewportTopLeftDelta);
 
-                context.translate(viewportTopLeft.x, viewportTopLeft.y);
+                context.translate(viewportTopLeft.current.x, viewportTopLeft.current.y);
                 context.scale(zoom, zoom);
                 context.translate(-newViewportTopLeft.x, -newViewportTopLeft.y);
 
-                setViewportTopLeft(newViewportTopLeft);
-                setScale(scale * zoom);
+                viewportTopLeft.current = newViewportTopLeft;
+                scale.current *= zoom;
                 isResetRef.current = false;
+                zoomReady.current = false;
+                setReadyForRender(true);
             }
         }
 
@@ -300,7 +315,7 @@ export default function MovableCanvas(props: CanvasProps) {
         },
     }));
 
-    const toggleBlock = (textOffset: number, text: string, thingGroup: WadMapThingGroupRenderable) => {
+    const toggleThingType = (textOffset: number, text: string, thingGroup: WadMapThingGroupRenderable) => {
         const backgroundColor = getThingColor(thingGroup);
         const enabled = toggledThingGroups.includes(thingGroup);
         const opacity = enabled ? 1 : 0.5;
@@ -325,7 +340,7 @@ export default function MovableCanvas(props: CanvasProps) {
         );
     };
 
-    const toggleAll = () => {
+    const toggleAllThings = () => {
         const backgroundColor = 'white';
         const enabled = Object.keys(WadMapThingGroupRenderable).length === toggledThingGroups.length;
         const opacity = enabled ? 1 : 0.5;
@@ -346,6 +361,38 @@ export default function MovableCanvas(props: CanvasProps) {
                     }}
                 >
                     {'All'}
+                </ColorText>
+            </ColorDivParent>
+        );
+    };
+
+    const toggleBoolState = (text: string, state: boolean, offset: number, toggleFunc: (t: boolean) => void) => {
+        const backgroundColor = 'white';
+        const textDecoration = state ? 'initial' : 'line-through';
+        const style: React.CSSProperties = { height: '14px', width: '14px', left: '3px', position: 'relative' };
+        const getIcon = () => {
+            if (!state) {
+                return <ClearIcon style={style} />;
+            }
+            return <CheckIcon style={style} />;
+        };
+        return (
+            <ColorDivParent>
+                <ColorDiv
+                    style={{ backgroundColor }}
+                    onClick={() => {
+                        toggleFunc(!state);
+                    }}
+                >
+                    {getIcon()}
+                </ColorDiv>
+                <ColorText
+                    style={{ left: `${offset}px`, textDecoration }}
+                    onClick={() => {
+                        toggleFunc(!state);
+                    }}
+                >
+                    {text}
                 </ColorText>
             </ColorDivParent>
         );
@@ -474,17 +521,17 @@ export default function MovableCanvas(props: CanvasProps) {
                         textAlign: 'center',
                     }}
                 >
-                    Toggles
+                    Toggle thing types
                 </p>
                 <div style={{ display: 'inline-flex' }}>
-                    {toggleBlock(-13, 'Other', WadMapThingGroupRenderable.OTHER)}
-                    {toggleBlock(-20, 'Monster', WadMapThingGroupRenderable.MONSTER)}
-                    {toggleBlock(-22, 'Powerup', WadMapThingGroupRenderable.POWERUP)}
-                    {toggleBlock(-17, 'Artifact', WadMapThingGroupRenderable.ARTIFACT)}
-                    {toggleBlock(-9, 'Key', WadMapThingGroupRenderable.KEY)}
-                    {toggleBlock(-20, 'Weapon', WadMapThingGroupRenderable.WEAPON)}
-                    {toggleBlock(-15, 'Ammo', WadMapThingGroupRenderable.AMMO)}
-                    {toggleAll()}
+                    {toggleThingType(-13, 'Other', WadMapThingGroupRenderable.OTHER)}
+                    {toggleThingType(-20, 'Monster', WadMapThingGroupRenderable.MONSTER)}
+                    {toggleThingType(-22, 'Powerup', WadMapThingGroupRenderable.POWERUP)}
+                    {toggleThingType(-17, 'Artifact', WadMapThingGroupRenderable.ARTIFACT)}
+                    {toggleThingType(-9, 'Key', WadMapThingGroupRenderable.KEY)}
+                    {toggleThingType(-20, 'Weapon', WadMapThingGroupRenderable.WEAPON)}
+                    {toggleThingType(-15, 'Ammo', WadMapThingGroupRenderable.AMMO)}
+                    {toggleAllThings()}
                 </div>
             </div>
             <br />
@@ -509,12 +556,13 @@ export default function MovableCanvas(props: CanvasProps) {
                         textAlign: 'center',
                     }}
                 >
-                    Flags
+                    Flags/Other
                 </p>
                 <div style={{ display: 'inline-flex' }}>
                     {toggleTriState('Net', showMultiPlayer, -8, onMultiPlayerToggle)}
                     {toggleDifficulty('show', showDifficulty, onShowDifficultyToggle)}
                     {toggleDifficulty('hide', hideDifficulty, onHideDifficultyToggle)}
+                    {toggleBoolState('Grid', drawGrid, -10, onDrawGridToggle)}
                 </div>
             </div>
             <button
