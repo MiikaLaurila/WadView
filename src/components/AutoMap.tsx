@@ -3,6 +3,7 @@ import React, { useEffect, useReducer, useState } from 'react';
 import { type Point } from '../interfaces/Point';
 import { type WadMap } from '../interfaces/wad/map/WadMap';
 import {
+    WadMapThingGroupHidden,
     WadThingAmmoKeys,
     WadThingArtifactKeys,
     WadThingDecorationKeys,
@@ -105,8 +106,8 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
 
     if (!playPal || !mapData) return null;
 
-    const thingIsRenderable = (t: WadMapThing): boolean => {
-        if (!toggledThingGroups.includes(t.thingGroup as WadMapThingGroupRenderable)) return false;
+    const thingIsRenderable = (t: WadMapThing, ignoreSelectedThingGroups: boolean = false): boolean => {
+        if (!toggledThingGroups.includes(t.thingGroup as WadMapThingGroupRenderable) && !ignoreSelectedThingGroups) return false;
         if (showMultiPlayer === 0 && t.flagsString.includes('NET_ONLY')) return false;
         if (showMultiPlayer === 2 && !t.flagsString.includes('NET_ONLY')) return false;
         if (showDifficulty === 1 && !t.flagsString.includes('ON_SKILL_EASY')) return false;
@@ -116,6 +117,12 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         if (hideDifficulty === 2 && t.flagsString.includes('ON_SKILL_MEDIUM')) return false;
         if (hideDifficulty === 3 && t.flagsString.includes('ON_SKILL_HARD')) return false;
         return true;
+    };
+
+    const thingIsInStats = (t: WadMapThing): boolean => {
+        if (t.thingGroup === WadMapThingGroupHidden.DECORATION || t.thingGroup === WadMapThingGroupHidden.OBSTACLE) {
+            return true;
+        } else return thingIsRenderable(t, true);
     };
 
     const clearHover = (): void => {
@@ -235,7 +242,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         const circleSize = getCircleSize();
         const onlyDots = useDots();
         const dotSize = getDotSize();
-        const things = mapData.things.filter(thingIsRenderable).filter((t) => {
+        const things = mapData.things.filter(t => thingIsRenderable(t)).filter((t) => {
             const magicScalar = 194 * (onlyDots ? 3 / (dotSize * 0.5) : 3 / circleSize);
             const mapHeight = diff(bounds.top, bounds.bottom);
             if (pointInRadius(newPoint.x, newPoint.y, t.xPos, t.yPos, mapHeight / magicScalar)) {
@@ -395,7 +402,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         } else {
             thingCache = {};
             ctx.lineWidth = lineWidth;
-            mapData.things.filter(thingIsRenderable).forEach((thing) => {
+            mapData.things.filter(t => thingIsRenderable(t)).forEach((thing) => {
                 const xy = transformMapPointToCanvas({ xPos: thing.xPos, yPos: thing.yPos }, canvas);
                 const x = xy.xPos;
                 const y = xy.yPos;
@@ -576,11 +583,13 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
 
     const getStatDiv = (header: string, keys: Readonly<string[]>): JSX.Element => {
         const width = '150px';
+        const thingArr = props.mapData.things.filter(t => thingIsInStats(t));
+        // const thingArr = props.mapData.things;
         return (
             <StatDiv>
                 <PNoMargin style={{ fontWeight: 'bold' }}>
                     <span style={{ display: 'inline-block', width }}>{header}</span>
-                    {props.mapData.things.filter((t) => keys.includes(t.thingTypeString)).length}
+                    {thingArr.filter((t) => keys.includes(t.thingTypeString)).length}
                 </PNoMargin>
                 {[...keys]
                     .sort((a, b) => a.localeCompare(b))
@@ -590,13 +599,28 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                                 <span style={{ display: 'inline-block', width }}>
                                     {k.toLocaleLowerCase().replaceAll('_', ' ')}
                                 </span>
-                                {props.mapData.things.filter((t) => t.thingTypeString === k).length}
+                                {thingArr.filter((t) => t.thingTypeString === k).length}
                             </PNoMargin>
                         );
                     })}
             </StatDiv>
         );
     };
+
+    const getStatsText = (): string => {
+        let text = 'STATS';
+        if (showMultiPlayer === 0) text += ' | without NET things';
+        if (showMultiPlayer === 2) text += ' | only NET things';
+        if (showDifficulty === 1) text += ' | only EASY skill things';
+        if (showDifficulty === 2) text += ' | only MEDIUM skill things';
+        if (showDifficulty === 3) text += ' | only HARD skill things';
+        if (hideDifficulty === 1) text += ' | without EASY skill things';
+        if (hideDifficulty === 2) text += ' | without MEDIUM skill things';
+        if (hideDifficulty === 3) text += ' | without HARD skill things';
+        if (showMultiPlayer === 1 && showDifficulty === 0 && hideDifficulty === 0) text += ' | with ALL things';
+        return text;
+    };
+
     return (
         <>
             <div style={{ margin: '20px' }}>
@@ -658,7 +682,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     </a>
                 </p>
                 <div style={{ fontSize: '12px' }}>
-                    <p style={{ fontWeight: 'bold', textDecoration: 'underline', fontSize: '16px' }}>STATS</p>
+                    <p style={{ fontWeight: 'bold', textDecoration: 'underline', fontSize: '16px' }}>{getStatsText()}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                         {getStatDiv('MONSTERS', WadThingMonsterKeys)}
                         {getStatDiv('POWERUPS', WadThingPowerupKeys)}
