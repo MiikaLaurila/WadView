@@ -40,7 +40,7 @@ export const FrontPage: React.FC = () => {
                 eventLog.current.push(msg ?? e);
             },
             breatheInLog: true,
-            debugLog: true,
+            debugLog: false,
         }),
     );
 
@@ -291,7 +291,7 @@ export const FrontPage: React.FC = () => {
                 </div>
             </TopBar>
             <Content>
-                <Box sx={{ paddingLeft: '8px' }}>{getContentPage()}</Box>
+                <Box style={{ paddingLeft: '8px' }}>{getContentPage()}</Box>
             </Content>
         </>
     );

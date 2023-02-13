@@ -7,7 +7,6 @@ import { getThingColor } from '../library/utilities/thingUtils';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
-import { type WadPlayPalTypedEntry } from '../interfaces/wad/WadPlayPal';
 
 interface CanvasProps {
     canvasWidth: number;
@@ -28,7 +27,6 @@ interface CanvasProps {
     hideDifficulty: number;
     onShowGridToggle: (toggle: boolean) => void;
     showGrid: boolean;
-    playPal: WadPlayPalTypedEntry;
 }
 
 interface Point {
@@ -85,8 +83,8 @@ export default function MovableCanvas(props: CanvasProps) {
         showDifficulty,
         onHideDifficultyToggle,
         hideDifficulty,
-        onShowGridToggle: onDrawGridToggle,
-        showGrid: drawGrid,
+        onShowGridToggle,
+        showGrid,
     } = props;
 
     // update last offset
@@ -96,7 +94,7 @@ export default function MovableCanvas(props: CanvasProps) {
 
     useEffect(() => {
         setReadyForRender(true);
-    }, [toggledThingGroups, showMultiPlayer, showDifficulty, hideDifficulty, drawGrid]);
+    }, [toggledThingGroups, showMultiPlayer, showDifficulty, hideDifficulty, showGrid]);
 
     const saveCanvas = (fullRender: boolean) => {
         if (context) {
@@ -564,7 +562,7 @@ export default function MovableCanvas(props: CanvasProps) {
                     {toggleTriState('Net', showMultiPlayer, -8, onMultiPlayerToggle)}
                     {toggleDifficulty('show', showDifficulty, onShowDifficultyToggle)}
                     {toggleDifficulty('hide', hideDifficulty, onHideDifficultyToggle)}
-                    {toggleBoolState('Grid', drawGrid, -10, onDrawGridToggle)}
+                    {toggleBoolState('Grid', showGrid, -10, onShowGridToggle)}
                 </div>
             </div>
             <button

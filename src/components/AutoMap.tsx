@@ -665,7 +665,6 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     }}
                     showGrid={showGrid}
                     onShowGridToggle={setShowGrid}
-                    playPal={playPal}
                 />
                 <p style={{ fontSize: '9px', margin: 0 }}>
                     Canvas pan/zoom component shamelessly yoinked from
