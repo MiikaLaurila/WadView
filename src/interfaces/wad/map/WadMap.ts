@@ -1,4 +1,5 @@
 import { isMapLump, type MapLump } from '../../../library/constants';
+import { type Point } from '../../Point';
 import { type WadDirectoryEntry } from '../WadDirectory';
 import { defaultWadMapBlockmap, type WadMapBlockMap } from './WadMapBlockMap';
 import { type WadMapLinedef } from './WadMapLinedef';
@@ -9,7 +10,6 @@ import { type WadMapSegment } from './WadMapSegment';
 import { type WadMapSidedef } from './WadMapSidedef';
 import { type WadMapSubSector } from './WadMapSubSector';
 import { type WadMapThing } from './WadMapThing';
-import { type WadMapVertex } from './WadMapVertex';
 
 export interface MapGroupDirectoryEntry extends WadDirectoryEntry {
     lumpName: MapLump;
@@ -31,7 +31,7 @@ export interface WadMap {
     things: WadMapThing[];
     linedefs: WadMapLinedef[];
     sidedefs: WadMapSidedef[];
-    vertices: WadMapVertex[];
+    vertices: Point[];
     segments: WadMapSegment[];
     subSectors: WadMapSubSector[];
     nodes: WadMapNode[];

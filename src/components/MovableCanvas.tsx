@@ -7,6 +7,7 @@ import { getThingColor } from '../library/utilities/thingUtils';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import { type WadPlayPalTypedEntry } from '../interfaces/wad/WadPlayPal';
 
 interface CanvasProps {
     canvasWidth: number;
@@ -15,7 +16,7 @@ interface CanvasProps {
     imageName: string;
     onFullSave: () => void;
     onFullSaveComplete: () => void;
-    onCanvasMouse: (canvasPos: Point, realPos: Point) => void;
+    onMouseMove: (canvasPos: Point, realPos: Point) => void;
     onThingToggle: (toggled: WadMapThingGroupRenderable[], forceEnable?: 'on' | 'off') => void;
     clearHover: () => void;
     toggledThingGroups: WadMapThingGroupRenderable[];
@@ -27,6 +28,7 @@ interface CanvasProps {
     hideDifficulty: number;
     onShowGridToggle: (toggle: boolean) => void;
     showGrid: boolean;
+    playPal: WadPlayPalTypedEntry;
 }
 
 interface Point {
@@ -73,7 +75,7 @@ export default function MovableCanvas(props: CanvasProps) {
         imageName,
         onFullSave,
         onFullSaveComplete,
-        onCanvasMouse,
+        onMouseMove: onCanvasMouse,
         onThingToggle,
         clearHover,
         toggledThingGroups,

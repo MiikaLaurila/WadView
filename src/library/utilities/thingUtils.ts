@@ -1,7 +1,6 @@
 import { WadMapThingGroupRenderable } from '../../interfaces/wad/map/WadMapThing';
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const getThingColor = (thingGroup: WadMapThingGroupRenderable) => {
+export const getThingColor = (thingGroup: WadMapThingGroupRenderable): string => {
     if (thingGroup === WadMapThingGroupRenderable.OTHER) {
         return 'lime';
     } else if (thingGroup === WadMapThingGroupRenderable.MONSTER) {
@@ -15,6 +14,6 @@ export const getThingColor = (thingGroup: WadMapThingGroupRenderable) => {
     } else if (thingGroup === WadMapThingGroupRenderable.WEAPON) {
         return 'blue';
     } else if (thingGroup === WadMapThingGroupRenderable.AMMO) {
-        return 'green';
+        return 'navy';
     } else return 'white';
 };

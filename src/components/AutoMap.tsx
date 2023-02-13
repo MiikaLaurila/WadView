@@ -2,8 +2,10 @@ import { styled } from '@mui/material';
 import React, { useEffect, useReducer, useState } from 'react';
 import { type Point } from '../interfaces/Point';
 import { type WadMap } from '../interfaces/wad/map/WadMap';
+import { isBlueDoor, isExit, isRedDoor, isTeleporter, isYellowDoor } from '../interfaces/wad/map/WadMapLinedef';
 import {
     WadMapThingGroupHidden,
+    WadMapThingGroupRenderable,
     WadThingAmmoKeys,
     WadThingArtifactKeys,
     WadThingDecorationKeys,
@@ -13,9 +15,7 @@ import {
     WadThingPowerupKeys,
     WadThingWeaponKeys,
     type WadMapThing,
-    type WadMapThingGroupRenderable,
 } from '../interfaces/wad/map/WadMapThing';
-import { type WadMapVertex } from '../interfaces/wad/map/WadMapVertex';
 import { type WadPlayPalTypedEntry } from '../interfaces/wad/WadPlayPal';
 import { defaultSidebarWidth, defaultTopbarHeight } from '../library/constants';
 import { diff } from '../library/utilities/mathUtils';
@@ -43,19 +43,21 @@ interface Dimensions {
     };
 }
 interface HoverData {
-    xPos: number;
-    yPos: number;
+    x: number;
+    y: number;
     things: WadMapThing[];
 }
 interface LineCacheEntry {
-    vStart: WadMapVertex;
-    vEnd: WadMapVertex;
+    vStart: Point;
+    vEnd: Point;
     color: string;
 }
 interface ThingCacheEntry {
-    pos: WadMapVertex;
+    pos: Point;
     isDot: boolean;
     color: string;
+    size: number;
+    trianglePoints?: [Point, Point, Point];
     text?: string;
     textWidth?: number;
 }
@@ -79,10 +81,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, forceUpdate] = useReducer((x: number) => x + 1, 0);
     const canvasPadding = 10;
-    const textSizeMagic = 16;
-    const cirlcleSizeMagic = 16;
-    const dotSizeMagic = 32;
-    const maxResImage = 5000;
+    const maxResImage = 10000;
 
     const { mapData, playPal, wadName } = props;
 
@@ -130,15 +129,15 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
     };
 
     const getBounds = (): Bounds => {
-        let top = mapData.vertices[0].yPos;
-        let left = mapData.vertices[0].xPos;
-        let bottom = mapData.vertices[0].yPos;
-        let right = mapData.vertices[0].xPos;
+        let top = mapData.vertices[0].y;
+        let left = mapData.vertices[0].x;
+        let bottom = mapData.vertices[0].y;
+        let right = mapData.vertices[0].x;
         for (let i = 1; i < mapData.vertices.length; i++) {
-            if (mapData.vertices[i].xPos < left) left = mapData.vertices[i].xPos;
-            if (mapData.vertices[i].xPos > right) right = mapData.vertices[i].xPos;
-            if (mapData.vertices[i].yPos < top) top = mapData.vertices[i].yPos;
-            if (mapData.vertices[i].yPos > bottom) bottom = mapData.vertices[i].yPos;
+            if (mapData.vertices[i].x < left) left = mapData.vertices[i].x;
+            if (mapData.vertices[i].x > right) right = mapData.vertices[i].x;
+            if (mapData.vertices[i].y < top) top = mapData.vertices[i].y;
+            if (mapData.vertices[i].y > bottom) bottom = mapData.vertices[i].y;
         }
         return { top, left, bottom, right };
     };
@@ -203,23 +202,11 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         return Math.min(diff(bounds.top, bounds.bottom), maxResImage) / Math.max(dim.height, dim.width);
     };
 
-    const getDotSize = (size = dotSizeMagic): number => {
-        return size / (diff(bounds.top, bounds.bottom) / Math.min(dim.height, dim.width));
+    const getDotSize = (size: number): number => {
+        return (size + 5) * dim.scale;
     };
 
-    const useDots = (): boolean => {
-        return diff(bounds.top, bounds.bottom) > 5000;
-    };
-
-    const getTextSize = (size = textSizeMagic): number => {
-        return Math.max(Math.round(size / getScalar()), 2);
-    };
-
-    const getCircleSize = (size = cirlcleSizeMagic): number => {
-        return Math.max(Math.round(size / getScalar()), 2);
-    };
-
-    const mouseToMap = (canvasPos: Point, realPos: Point): void => {
+    const onMouseMove = (canvasPos: Point, realPos: Point): void => {
         const newPoint = canvasPos;
         newPoint.y *= -1;
         newPoint.x -= canvasPadding;
@@ -231,34 +218,23 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         newPoint.x += lastBounds.left;
         newPoint.y += lastBounds.top;
 
-        const pointInRadius = (a: number, b: number, x: number, y: number, r: number): boolean => {
-            const distPoins = (a - x) * (a - x) + (b - y) * (b - y);
-            r *= r;
-            if (distPoins < r) {
-                return true;
-            }
-            return false;
+        const isInsideBoundingBox = (a: Point, b: Point, size: number): boolean => {
+            const halfSize = size / 2;
+            return (Math.abs(a.x - b.x) <= halfSize && Math.abs(a.y - b.y) <= halfSize);
         };
-        const circleSize = getCircleSize();
-        const onlyDots = useDots();
-        const dotSize = getDotSize();
-        const things = mapData.things.filter(t => thingIsRenderable(t)).filter((t) => {
-            const magicScalar = 194 * (onlyDots ? 3 / (dotSize * 0.5) : 3 / circleSize);
-            const mapHeight = diff(bounds.top, bounds.bottom);
-            if (pointInRadius(newPoint.x, newPoint.y, t.xPos, t.yPos, mapHeight / magicScalar)) {
-                return true;
-            } else return false;
-        });
+        const things = mapData.things
+            .filter(t => thingIsRenderable(t))
+            .filter(t => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size + 5));
         if (things.length > 0) {
-            setHoverData({ xPos: realPos.x, yPos: realPos.y, things });
+            setHoverData({ x: realPos.x, y: realPos.y, things });
         } else if (hoverData) {
             setHoverData(null);
         }
     };
 
-    const transformMapPointToCanvas = (p: WadMapVertex, canvas: HTMLCanvasElement): WadMapVertex => {
-        let xTemp = p.xPos;
-        let yTemp = p.yPos;
+    const transformMapPointToCanvas = (p: Point, canvas: HTMLCanvasElement): Point => {
+        let xTemp = p.x;
+        let yTemp = p.y;
         xTemp -= bounds.left;
         yTemp -= bounds.top;
         xTemp *= dim.scale;
@@ -268,7 +244,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         xTemp += canvasPadding;
         yTemp += canvasPadding;
         yTemp = canvas.height - yTemp;
-        return { xPos: xTemp, yPos: yTemp };
+        return { x: xTemp, y: yTemp };
     };
     const transformMapYToCanvas = (y: number, canvas: HTMLCanvasElement): number => {
         let yTemp = y;
@@ -305,8 +281,8 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                 ctx.strokeStyle = key;
                 ctx.beginPath();
                 lineCache[key].forEach((line) => {
-                    ctx.moveTo(line.vStart.xPos, line.vStart.yPos);
-                    ctx.lineTo(line.vEnd.xPos, line.vEnd.yPos);
+                    ctx.moveTo(line.vStart.x, line.vStart.y);
+                    ctx.lineTo(line.vEnd.x, line.vEnd.y);
                 });
                 ctx.stroke();
             });
@@ -324,31 +300,47 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     const vStart = transformMapPointToCanvas({ ...mapData.vertices[line.start] }, canvas);
                     const vEnd = transformMapPointToCanvas({ ...mapData.vertices[line.end] }, canvas);
 
-                    let color = playPal[96].hex;
+                    let color = 'cyan';
                     const frontSide = { ...mapData.sidedefs[line.frontSideDef] };
                     const frontSector = { ...mapData.sectors[frontSide.sector] };
-
+                    const fSectorFloor = frontSector.floorHeight;
+                    const fSectorCeil = frontSector.ceilingHeight;
                     const isSecretSector = frontSector.specialType === 9;
                     const isHiddenSecret = line.flagsString.includes('SECRET');
-                    if (line.backSideDef !== -1 && !isHiddenSecret) {
+                    const isTwoSided = line.backSideDef !== 65535;
+                    if (isBlueDoor(line.specialType)) {
+                        color = playPal[200].hex;
+                    } else if (isRedDoor(line.specialType)) {
+                        color = playPal[176].hex;
+                    } else if (isYellowDoor(line.specialType)) {
+                        color = playPal[231].hex;
+                    } else if (isExit(line.specialType)) {
+                        color = playPal[112].hex;
+                    } else if (isTeleporter(line.specialType)) {
+                        color = playPal[121].hex;
+                    } else if (isTwoSided && !isHiddenSecret) {
                         const backSide = { ...mapData.sidedefs[line.backSideDef] };
                         const backSector = { ...mapData.sectors[backSide.sector] };
-                        if (frontSector.floorHeight !== backSector.floorHeight) {
-                            color = playPal[64].hex;
-                        } else if (frontSector.ceilingHeight !== backSector.ceilingHeight) {
-                            color = playPal[231].hex;
+                        const bSectorFloor = backSector.floorHeight;
+                        const bSectorCeil = backSector.ceilingHeight;
+                        if (fSectorFloor !== bSectorFloor) {
+                            color = playPal[55].hex;
+                        } else if (fSectorCeil !== bSectorCeil) {
+                            color = playPal[215].hex;
+                        } else if (fSectorCeil === bSectorCeil && fSectorFloor === bSectorFloor) {
+                            color = playPal[100].hex;
                         }
                     } else if (isSecretSector && !isHiddenSecret) {
                         color = playPal[252].hex;
                     } else {
-                        color = playPal[176].hex;
+                        color = playPal[180].hex;
                     }
 
                     ctx.strokeStyle = color;
                     ctx.lineWidth = lineWidth;
                     ctx.beginPath();
-                    ctx.moveTo(vStart.xPos, vStart.yPos);
-                    ctx.lineTo(vEnd.xPos, vEnd.yPos);
+                    ctx.moveTo(vStart.x, vStart.y);
+                    ctx.lineTo(vEnd.x, vEnd.y);
                     ctx.stroke();
                     if (!lineCache[color]) lineCache[color] = [];
                     lineCache[color].push({ vStart, vEnd, color });
@@ -356,88 +348,95 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         }
     };
 
+    const drawTriangle = (
+        ctx: CanvasRenderingContext2D,
+        centerX: number,
+        centerY: number,
+        size: number,
+        rotation: number,
+    ): [Point, Point, Point] => {
+        const rot = (-rotation * Math.PI / 180) + Math.PI / 2;
+        const height = Math.sin(90 * Math.PI / 180) * size;
+        const width = size;
+
+        const v1 = {
+            x: centerX - (width / 2) * Math.cos(rot) - (height / 2) * Math.sin(rot),
+            y: centerY - (width / 2) * Math.sin(rot) + (height / 2) * Math.cos(rot),
+        };
+        const v2 = {
+            x: centerX + (width / 2) * Math.cos(rot) - (height / 2) * Math.sin(rot),
+            y: centerY + (width / 2) * Math.sin(rot) + (height / 2) * Math.cos(rot),
+        };
+        const v3 = {
+            x: centerX + (height / 2) * Math.sin(rot),
+            y: centerY - (height / 2) * Math.cos(rot),
+        };
+
+        ctx.beginPath();
+        ctx.moveTo(v1.x, v1.y);
+        ctx.lineTo(v2.x, v2.y);
+        ctx.lineTo(v3.x, v3.y);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+        return [v1, v2, v3];
+    };
+
     const drawThings = (
         canvas: HTMLCanvasElement,
         ctx: CanvasRenderingContext2D,
         lineWidth: number,
-        onlyDots: boolean,
-        dotSize: number,
-        textSize: number,
-        circleSize: number,
         useCache: boolean,
     ): void => {
         if (useCache && Object.keys(thingCache).length > 0) {
             Object.keys(thingCache).forEach((key: string) => {
                 ctx.lineWidth = lineWidth;
-                ctx.beginPath();
+
                 thingCache[key].forEach((thing, idx, arr) => {
-                    const scaledDotSize = getDotSize(dotSizeMagic - idx * (dotSizeMagic / arr.length));
-                    const x = thing.pos.xPos;
-                    const y = thing.pos.yPos;
+                    ctx.beginPath();
+                    const scaledDotSize = getDotSize(thing.size - idx * (thing.size / arr.length));
+                    const x = thing.pos.x;
+                    const y = thing.pos.y;
                     ctx.strokeStyle = thing.color;
                     ctx.fillStyle = thing.color;
                     if (thing.isDot) {
                         ctx.fillRect(x - scaledDotSize / 2, y - scaledDotSize / 2, scaledDotSize, scaledDotSize);
-                    } else {
-                        ctx.font = `${textSize}px arial`;
-                        ctx.arc(x, y, circleSize, 0, 2 * Math.PI);
-                        ctx.stroke();
-                        const text = thing.text ?? '';
-                        const textWidth = thing.textWidth ?? 1;
-                        const maxWidth = circleSize * 1.8;
-                        if (maxWidth > textWidth) {
-                            ctx.strokeText(text, x - textWidth / 2, y + textSize / 3, circleSize * 1.7);
-                        } else {
-                            ctx.strokeText(
-                                text,
-                                x - textWidth / 2 + (textWidth - maxWidth) / 2,
-                                y + textSize / 3,
-                                maxWidth,
-                            );
-                        }
+                    } else if (thing.trianglePoints) {
+                        const points = thing.trianglePoints;
+                        ctx.moveTo(points[0].x, points[0].y);
+                        ctx.lineTo(points[1].x, points[1].y);
+                        ctx.lineTo(points[2].x, points[2].y);
+                        ctx.closePath();
                     }
+                    ctx.stroke();
                 });
-                ctx.stroke();
             });
         } else {
             thingCache = {};
             ctx.lineWidth = lineWidth;
-            mapData.things.filter(t => thingIsRenderable(t)).forEach((thing) => {
-                const xy = transformMapPointToCanvas({ xPos: thing.xPos, yPos: thing.yPos }, canvas);
-                const x = xy.xPos;
-                const y = xy.yPos;
-                const cacheKey = `${x}|${y}`;
-                const color = getThingColor(thing.thingGroup as WadMapThingGroupRenderable);
-                if (onlyDots) {
-                    ctx.beginPath();
-                    ctx.fillStyle = color;
-                    ctx.fillRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
-                    ctx.stroke();
-                    if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
-                    thingCache[cacheKey].push({ pos: { xPos: x, yPos: y }, color, isDot: true });
-                } else {
-                    ctx.beginPath();
-                    ctx.font = `${textSize}px arial`;
+            mapData.things
+                .filter(t => thingIsRenderable(t))
+                .forEach((thing) => {
+                    const xy = transformMapPointToCanvas({ x: thing.x, y: thing.y }, canvas);
+                    const x = xy.x;
+                    const y = xy.y;
+                    const cacheKey = `${x}|${y}`;
+                    const color = getThingColor(thing.thingGroup as WadMapThingGroupRenderable);
                     ctx.strokeStyle = color;
-                    ctx.arc(x, y, circleSize, 0, 2 * Math.PI);
-                    ctx.stroke();
-                    const text = thing.thingType.toString();
-                    const textWidth = ctx.measureText(text).width;
-                    const maxWidth = circleSize * 1.8;
-                    if (maxWidth > textWidth) {
-                        ctx.strokeText(text, x - textWidth / 2, y + textSize / 3, circleSize * 1.7);
+                    ctx.fillStyle = color;
+                    const isDot = thing.thingGroup !== WadMapThingGroupRenderable.MONSTER;
+                    const dotSize = getDotSize(thing.size);
+                    if (isDot) {
+                        ctx.fillRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
+                        if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
+                        thingCache[cacheKey].push({ pos: { x, y }, color, isDot, size: thing.size });
                     } else {
-                        ctx.strokeText(
-                            text,
-                            x - textWidth / 2 + (textWidth - maxWidth) / 2,
-                            y + textSize / 3,
-                            maxWidth,
-                        );
+                        const trianglePoints = drawTriangle(ctx, x, y, dotSize, thing.angle);
+                        if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
+                        thingCache[cacheKey].push({ pos: { x, y }, color, isDot, trianglePoints, size: thing.size });
                     }
-                    if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
-                    thingCache[cacheKey].push({ pos: { xPos: x, yPos: y }, color, isDot: false, text, textWidth });
-                }
-            });
+                });
         }
     };
 
@@ -450,22 +449,22 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         const y0Orig = mapData.blockMap.yOrigin;
         const x1Orig = x0Orig + colCount * gridSize;
         const y1Orig = y0Orig + rowCount * gridSize;
-        const xy0 = transformMapPointToCanvas({ xPos: x0Orig, yPos: y0Orig }, canvas);
-        const xy1 = transformMapPointToCanvas({ xPos: x1Orig, yPos: y1Orig }, canvas);
+        const xy0 = transformMapPointToCanvas({ x: x0Orig, y: y0Orig }, canvas);
+        const xy1 = transformMapPointToCanvas({ x: x1Orig, y: y1Orig }, canvas);
         ctx.strokeStyle = gridColor;
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
         for (let i = 0; i < rowCount + 1; i++) {
             const yStart = transformMapYToCanvas(y0Orig + i * gridSize, canvas);
-            ctx.moveTo(xy0.xPos, yStart);
-            ctx.lineTo(xy1.xPos, yStart);
+            ctx.moveTo(xy0.x, yStart);
+            ctx.lineTo(xy1.x, yStart);
         }
 
         for (let i = 0; i < colCount + 1; i++) {
             const xStart = transformMapXToCanvas(x0Orig + i * gridSize);
-            ctx.moveTo(xStart, xy0.yPos);
-            ctx.lineTo(xStart, xy1.yPos);
+            ctx.moveTo(xStart, xy0.y);
+            ctx.lineTo(xStart, xy1.y);
         }
         ctx.stroke();
     };
@@ -474,17 +473,13 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
         const bounds = getBounds();
         const scalar = getScalar();
         const lineWidth = renderFull ? 2 / scalar : 1.5 / scale;
-        const onlyDots = useDots();
-        const dotSize = getDotSize();
-        const textSize = getTextSize();
-        const circleSize = getCircleSize();
         const useCache = compareDimensions(dim);
         drawInit(canvas, ctx);
         if (showGrid) {
             drawGrid(canvas, ctx, lineWidth);
         }
         drawLines(canvas, ctx, lineWidth, useCache);
-        drawThings(canvas, ctx, lineWidth, onlyDots, dotSize, textSize, circleSize, useCache);
+        drawThings(canvas, ctx, lineWidth, useCache);
 
         lastDimensions = JSON.parse(JSON.stringify(dim));
         lastBounds = JSON.parse(JSON.stringify(bounds));
@@ -509,13 +504,13 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
 
     const getHoverData = (data: HoverData): JSX.Element[] => {
         let cumulativeHeight = 0;
-        const width = 170;
+        const width = 220;
         return data.things.map((t, idx) => {
             const flagRoom = t.flagsString.length * 20;
             const height = 70 + flagRoom;
             cumulativeHeight += height + 5;
-            const top = data.yPos - 10 - cumulativeHeight - window.scrollY;
-            let left = data.xPos - 90;
+            const top = data.y - 10 - cumulativeHeight - window.scrollY;
+            let left = data.x - 90;
             if (idx > 2 && idx % 2 === 0) {
                 left += ((idx - 2) / 2) * (width + 10);
             } else if (idx > 2) {
@@ -526,7 +521,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     key={`${JSON.stringify(t)}${idx}`}
                     style={{
                         position: 'fixed',
-                        top: idx < 3 ? top : data.yPos - 85 - flagRoom,
+                        top: idx < 3 ? top : data.y - 85 - flagRoom,
                         left,
                         border: '1px solid black',
                         backgroundColor: 'white',
@@ -538,7 +533,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                 >
                     <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                         TYPE:
-                        <span style={{ fontWeight: 'normal' }}> {t.thingTypeString}</span>
+                        <span style={{ fontWeight: 'normal' }}> {`${t.thingType} | ${t.thingTypeString}`}</span>
                     </span>
                     <br />
                     <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
@@ -547,14 +542,14 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     </span>
                     <br />
                     <span style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                        ID:
-                        <span style={{ fontWeight: 'normal' }}> {t.thingType}</span>
+                        POS:
+                        <span style={{ fontWeight: 'normal' }}> {`(${t.x},${t.y}) | ${t.angle}`}</span>
                     </span>
                     <br />
                     <span style={{ fontWeight: 'bold' }}>FLAGS: </span>
                     {t.flagsString.map((f) => {
                         return (
-                            <React.Fragment key={`${t.xPos}${t.yPos}${t.thingType}${f}`}>
+                            <React.Fragment key={`${t.x}${t.y}${t.thingType}${f}`}>
                                 <br />
                                 <span>{f}</span>
                             </React.Fragment>
@@ -635,7 +630,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     onFullSaveComplete={() => {
                         setRenderFull(false);
                     }}
-                    onCanvasMouse={mouseToMap}
+                    onMouseMove={onMouseMove}
                     clearHover={clearHover}
                     toggledThingGroups={toggledThingGroups}
                     onThingToggle={(toggleList, forceState?: 'on' | 'off') => {
@@ -670,6 +665,7 @@ export const AutoMap: React.FC<Props> = (props: Props) => {
                     }}
                     showGrid={showGrid}
                     onShowGridToggle={setShowGrid}
+                    playPal={playPal}
                 />
                 <p style={{ fontSize: '9px', margin: 0 }}>
                     Canvas pan/zoom component shamelessly yoinked from

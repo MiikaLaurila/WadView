@@ -16,11 +16,11 @@ import {
     type WadThing,
     type WadThingType,
     getWadMapThingGroup,
+    SizeOfMapThing,
 } from '../../interfaces/wad/map/WadMapThing';
 import { extractWadMapLinedefFlags, type WadMapLinedef } from '../../interfaces/wad/map/WadMapLinedef';
 import { type WadMapSidedef } from '../../interfaces/wad/map/WadMapSidedef';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
-import { type WadMapVertex } from '../../interfaces/wad/map/WadMapVertex';
 import { type WadMapSegment } from '../../interfaces/wad/map/WadMapSegment';
 import { type WadMapSubSector } from '../../interfaces/wad/map/WadMapSubSector';
 import { type WadMapNode, WadMapNodeChildType } from '../../interfaces/wad/map/WadMapNode';
@@ -35,6 +35,7 @@ import {
 } from '../../interfaces/wad/WadPlayPal';
 import { colorMapLumpName, playPalLumpName } from '../constants';
 import { type WadColorMap } from '../../interfaces/wad/WadColorMap';
+import { type Point } from '../../interfaces/Point';
 
 interface LogMessage {
     evt: WadFileEvent;
@@ -273,9 +274,9 @@ export class WadFile {
             if (isValid && !currentMapName) {
                 currentMapName = arr[idx - 1].lumpName;
                 foundLumps.push(entry);
-            } else if (isValid && currentMapName) {
+            } else if ((isValid && idx !== arr.length - 1) && currentMapName) {
                 foundLumps.push(entry);
-            } else if (!isValid && currentMapName) {
+            } else if ((!isValid || idx === arr.length - 1) && currentMapName) {
                 mapGroups.push({ name: currentMapName, lumps: foundLumps });
                 currentMapName = null;
                 foundLumps = [];
@@ -305,15 +306,17 @@ export class WadFile {
             const thingGroup = getWadMapThingGroup(thingTypeString);
             const flags = new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 10))[0];
             const flagsString = extractWadMapThingFlags(flags);
+            const size = SizeOfMapThing[thingTypeString];
             things.push({
-                xPos,
-                yPos,
+                x: xPos,
+                y: yPos,
                 angle,
                 thingType,
                 flags,
                 thingTypeString,
                 flagsString,
                 thingGroup,
+                size,
             });
         }
         return things;
@@ -332,8 +335,8 @@ export class WadFile {
             const flagsString = extractWadMapLinedefFlags(flags);
             const specialType = new Int16Array(view.buffer.slice(viewStart + 6, viewStart + 8))[0];
             const sectorTag = new Int16Array(view.buffer.slice(viewStart + 8, viewStart + 10))[0];
-            const frontSideDef = new Int16Array(view.buffer.slice(viewStart + 10, viewStart + 12))[0];
-            const backSideDef = new Int16Array(view.buffer.slice(viewStart + 12, viewStart + 14))[0];
+            const frontSideDef = new Uint16Array(view.buffer.slice(viewStart + 10, viewStart + 12))[0];
+            const backSideDef = new Uint16Array(view.buffer.slice(viewStart + 12, viewStart + 14))[0];
             linedefs.push({
                 start,
                 end,
@@ -374,8 +377,8 @@ export class WadFile {
         return sidedefs;
     }
 
-    private getMapVertices(start: number, size: number): WadMapVertex[] {
-        const vertices: WadMapVertex[] = [];
+    private getMapVertices(start: number, size: number): Point[] {
+        const vertices: Point[] = [];
         const vertexEntryLength = 4;
         const vertexCount = size / vertexEntryLength;
         const view = new Uint8Array(this.wadFile.slice(start, start + size));
@@ -384,7 +387,7 @@ export class WadFile {
             const xPos = new Int16Array(view.buffer.slice(viewStart, viewStart + 2))[0];
             const yPos = new Int16Array(view.buffer.slice(viewStart + 2, viewStart + 4))[0];
 
-            vertices.push({ xPos, yPos });
+            vertices.push({ x: xPos, y: yPos });
         }
         return vertices;
     }
