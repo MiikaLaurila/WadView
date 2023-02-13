@@ -34,14 +34,14 @@ export const FrontPage: React.FC = () => {
     const eventLog = useRef<string[]>([]);
 
     const wadFileRef = useRef(
-        new WadFile(
-            undefined,
-            false,
-            (e, msg) => {
+        new WadFile({
+            eventListener: (e, msg) => {
                 setLastEvent(e);
                 eventLog.current.push(msg ?? e);
             },
-        ),
+            breatheInLog: true,
+            debugLog: true,
+        }),
     );
 
     const headerRef = useRef<WadHeader | null>(null);

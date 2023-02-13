@@ -41,6 +41,18 @@ interface LogMessage {
     evt: WadFileEvent;
     msg?: string;
 }
+interface WadFileOptions {
+    fileUrl?: string;
+    debugLog?: boolean;
+    eventListener?: (evt: WadFileEvent, msg?: string) => any;
+    readyCb?: (success: boolean, err?: string) => any;
+    parseSegments?: boolean;
+    parseSubSectors?: boolean;
+    parseNodes?: boolean;
+    parseRejects?: boolean;
+    parseBlockmap?: boolean;
+    breatheInLog?: boolean;
+}
 export class WadFile {
     private _fileUrl = '';
     private _wadLoaded = false;
@@ -56,29 +68,21 @@ export class WadFile {
     private readonly _parseSubSectors: boolean = false;
     private readonly _parseNodes: boolean = false;
     private readonly _debugLog: boolean = false;
-    constructor(
-        fileUrl?: string,
-        debugLog: boolean = false,
-        eventListener?: (evt: WadFileEvent, msg?: string) => any,
-        readyCb?: (success: boolean, err?: string) => any,
-        parseSegments: boolean = false,
-        parseSubSectors: boolean = false,
-        parseNodes: boolean = false,
-        parseRejects: boolean = false,
-        parseBlockmap: boolean = false,
-    ) {
-        this._parseRejects = parseRejects;
-        this._parseBlockList = parseBlockmap;
-        this._parseSegments = parseSegments;
-        this._parseSubSectors = parseSubSectors;
-        this._parseNodes = parseNodes;
-        this._debugLog = debugLog;
-        if (eventListener !== undefined) {
-            this._eventSink = eventListener;
+    private readonly _breatheInLog: boolean = false;
+    constructor(opts: WadFileOptions) {
+        this._parseRejects = opts.parseRejects ?? false;
+        this._parseBlockList = opts.parseBlockmap ?? false;
+        this._parseSegments = opts.parseSegments ?? false;
+        this._parseSubSectors = opts.parseSubSectors ?? false;
+        this._parseNodes = opts.parseNodes ?? false;
+        this._debugLog = opts.debugLog ?? false;
+        this._breatheInLog = opts.breatheInLog ?? false;
+        if (opts.eventListener !== undefined) {
+            this._eventSink = opts.eventListener;
         }
-        if (fileUrl !== undefined && readyCb !== undefined) {
-            this._fileUrl = fileUrl;
-            this.loadFileFromUrl(this._fileUrl, readyCb);
+        if (opts.fileUrl !== undefined && opts.readyCb !== undefined) {
+            this._fileUrl = opts.fileUrl;
+            this.loadFileFromUrl(this._fileUrl, opts.readyCb);
         }
     }
 
@@ -91,7 +95,9 @@ export class WadFile {
             if (!this._debugLog && evt.includes('DEBUG')) return;
             this._eventSink(evt, msg);
             this._internalLog.push({ evt, msg });
-            await this.breathe(addDelay || 1);
+            if (this._breatheInLog) {
+                await this.breathe(addDelay || 1);
+            }
         }
     }
 
@@ -671,8 +677,8 @@ export class WadFile {
                 }
             } else {
                 await this.sendEvent(
-                    WadFileEvent.MAP_SKIPPING_NODES,
-                    `SKIPPING Nodes parsing for ${mapGroup.name}`,
+                    WadFileEvent.MAP_SKIPPING_SEGMENTS,
+                    `SKIPPING Segments parsing for ${mapGroup.name}`,
                 );
             }
 
@@ -687,8 +693,8 @@ export class WadFile {
                 }
             } else {
                 await this.sendEvent(
-                    WadFileEvent.MAP_SKIPPING_NODES,
-                    `SKIPPING Nodes parsing for ${mapGroup.name}`,
+                    WadFileEvent.MAP_SKIPPING_SUBSECTORS,
+                    `SKIPPING SubSectors parsing for ${mapGroup.name}`,
                 );
             }
 
