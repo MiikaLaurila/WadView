@@ -181,6 +181,16 @@ export class WadFile {
         }
     }
 
+    public loadArrayBuffer(file: ArrayBuffer, fileName: string, callback?: (success: boolean, err?: string) => void): void {
+        this.wadLoadAttempted = true;
+        this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
+        this._fileUrl = fileName;
+        this.wadFile = file;
+        this.wadLoaded = true;
+        void this.sendEvent(WadFileEvent.FILE_LOADED);
+        if (callback !== undefined) callback(true);
+    }
+
     public loadFileFromUrl(fileUrl: string, callback?: (success: boolean, err?: string) => void): void {
         this.wadLoadAttempted = true;
         this._wadStruct = JSON.parse(JSON.stringify(defaultWad));

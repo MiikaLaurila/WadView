@@ -61,13 +61,9 @@ let app: Application | null = null;
 let viewport: Viewport | null = null;
 let hoverDivs: HTMLDivElement[] = [];
 let enabledThingGroups: WadMapThingGroupRenderable[] = [];
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let showMultiPlayer = 0;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let showDifficulty = 0;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let hideDifficulty = 0;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let showGrid = false;
 
 window.addEventListener('resize', () => {

@@ -14,7 +14,8 @@
   "license": "ISC",
   "dependencies": {
     "pixi-viewport": "^4.38.0",
-    "pixi.js": "^6.5.9"
+    "pixi.js": "^6.5.9",
+    "unzipit": "^1.4.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.52.0",
