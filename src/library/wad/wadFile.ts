@@ -227,7 +227,7 @@ export class WadFile {
         const view = new Uint8Array(this.wadFile, 0, 12);
         const type: WadType = utf8ArrayToStr(view.subarray(0, 4)) as WadType;
         if (type !== WadType.IWAD && type !== WadType.PWAD) {
-            console.error();
+            void this.sendEvent(WadFileEvent.NOT_WAD, `${this._fileUrl} is not a wad file. ${type}`);
             return null;
         }
         const directoryEntryCount: number = new Int32Array(view.buffer.slice(4, 8))[0];

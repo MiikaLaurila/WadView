@@ -23,4 +23,5 @@ export enum WadFileEvent {
     MAPS_PARSING = 'MAPS_PARSING',
     MAP_PARSING = 'MAP_PARSING',
     LOADING_READY = 'LOADING_READY',
+    NOT_WAD = 'NOT_WAD',
 }
