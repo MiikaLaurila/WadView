@@ -1,0 +1,20 @@
+#log-window {
+    width: 600px;
+    height: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#log-window-messages {
+    border: 1px solid black;
+    font-family: monospace;
+    font-size: 12px;
+    height: 572px;
+    margin-bottom: 8px;
+    overflow-y: scroll;
+}
+
+#log-window-messages p {
+    margin: 0;
+    padding: 0;
+}

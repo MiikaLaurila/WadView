@@ -1,6 +1,6 @@
 import { WadMapThingGroupRenderable } from '../../interfaces/wad/map/WadMapThing';
 
-export const getThingColor = (thingGroup: WadMapThingGroupRenderable): string => {
+export const getThingColor = (thingGroup: WadMapThingGroupRenderable | 'ALL'): string => {
     if (thingGroup === WadMapThingGroupRenderable.OTHER) {
         return 'lime';
     } else if (thingGroup === WadMapThingGroupRenderable.MONSTER) {
@@ -15,5 +15,7 @@ export const getThingColor = (thingGroup: WadMapThingGroupRenderable): string =>
         return 'blue';
     } else if (thingGroup === WadMapThingGroupRenderable.AMMO) {
         return 'navy';
-    } else return 'white';
+    } else if (thingGroup === 'ALL') {
+        return 'white';
+    } else return 'black';
 };

@@ -1,0 +1,86 @@
+#map-window-bottom-area {
+    display: flex;
+    position: relative;
+    top: -4px;
+    font-family: monospace;
+}
+
+#map-window-button-container {
+    display: flex;
+    gap: 8px;
+    height: 25px;
+    margin-top: 8px;
+    margin-left: 8px;
+}
+
+#map-window-toggle-area {
+    width: 450px;
+    padding-bottom: 8px;
+    background-color: black;
+}
+
+#map-window-toggle-area p {
+    color: white;
+    text-align: center;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+#map-window-toggle-area div {
+    display: flex;
+    height: 40px;
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-left: 2px;
+    margin-top: 1px;
+}
+
+#map-window-toggle-area div:hover {
+    cursor: pointer;
+}
+
+#map-window-toggle-area div div {
+    display: block;
+    height: 40px;
+    width: 50px;
+}
+
+#map-window-toggle-area div div div {
+    height: 20px;
+    width: 20px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#map-window-toggle-area div div p {
+    color: white;
+    font-size: 10px;
+    width: 100%;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    margin-top: 1px;
+    white-space: nowrap;
+}
+
+.map-hover-div {
+    position: fixed;
+    border: 1px solid black;
+    background-color: white;
+    font-size: 12px;
+    font-family: 'Arial';
+    padding-left: 2px;
+}
+
+.map-hover-span-head {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.map-hover-span-text {
+    font-weight: normal;
+    white-space: nowrap;
+}

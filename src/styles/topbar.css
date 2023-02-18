@@ -1,0 +1,31 @@
+#topbar {
+    z-index: 100;
+    position: fixed;
+    background-color: white;
+    left: 200px;
+    height: 35px;
+    top: 0px;
+    width: calc(100vw - 200px);
+    border-bottom: 1px solid grey;
+    display: 'flex';
+}
+
+#topbar-head {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial';
+    font-size: 16px;
+    padding-top: 8px;
+    padding-left: 8px;
+}
+
+#wad-input-hidden {
+    display: none;
+}
+
+#topbar-input-boxes {
+    margin-right: 24px;
+    float: right;
+    padding-top: 6px;
+}

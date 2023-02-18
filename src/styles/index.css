@@ -1,0 +1,114 @@
+#sidebar {
+    position: fixed;
+    height: 100vh;
+    background-color: white;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    overflow-y: scroll;
+    border-right: 1px solid grey;
+    width: 200px;
+}
+
+#topbar {
+    z-index: 100;
+    position: fixed;
+    background-color: white;
+    left: 200px;
+    height: 35px;
+    top: 0px;
+    width: calc(100vw - 200px);
+    border-bottom: 1px solid grey;
+    display: 'flex';
+}
+
+#topbar-head {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial';
+    font-size: 16px;
+    padding-top: 8px;
+    padding-left: 8px;
+}
+
+#content {
+    position: relative;
+    top: 40px;
+    left: 200px;
+    width: calc(100% - 200px);
+}
+
+#wad-input-hidden {
+    display: none;
+}
+
+.module {
+    /* border: 1px solid red; */
+}
+
+.input-boxes {
+    margin-right: 24px;
+    float: right;
+    padding-top: 6px;
+}
+
+#log-window {
+    width: 600px;
+    height: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#log-window-messages {
+    border: 1px solid black;
+    font-family: monospace;
+    font-size: 12px;
+    height: 572px;
+    margin-bottom: 8px;
+    overflow-y: scroll;
+}
+
+#log-window-messages p {
+    margin: 0;
+    padding: 0;
+}
+
+#playpal-window {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.section {
+    font-family: 'Arial';
+    border-bottom: 1px solid grey;
+    user-select: none;
+}
+
+.section .head {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.section .head:hover {
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.section .subhead {
+    font-size: 14px;
+    padding-left: 12px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.section .subhead:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.section .subhead:last-child {
+    border-bottom: none;
+}

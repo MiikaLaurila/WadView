@@ -1,0 +1,45 @@
+#sidebar {
+    position: fixed;
+    height: 100vh;
+    background-color: white;
+    z-index: 100;
+    top: 0;
+    left: 0;
+    overflow-y: scroll;
+    border-right: 1px solid grey;
+    width: 200px;
+}
+
+.section {
+    font-family: 'Arial';
+    border-bottom: 1px solid grey;
+    user-select: none;
+}
+
+.section .head {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.section .head:hover {
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+.section .subhead {
+    font-size: 14px;
+    padding-left: 12px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.section .subhead:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.section .subhead:last-child {
+    border-bottom: none;
+}

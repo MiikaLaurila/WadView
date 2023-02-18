@@ -1,0 +1,4 @@
+#playpal-window {
+    display: flex;
+    flex-wrap: wrap;
+}

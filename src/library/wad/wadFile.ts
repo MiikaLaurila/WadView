@@ -44,8 +44,8 @@ interface LogMessage {
 interface WadFileOptions {
     fileUrl?: string;
     debugLog?: boolean;
-    eventListener?: (evt: WadFileEvent, msg?: string) => any;
-    readyCb?: (success: boolean, err?: string) => any;
+    eventListener?: (evt: WadFileEvent, msg?: string) => void;
+    readyCb?: (success: boolean, err?: string) => void;
     parseSegments?: boolean;
     parseSubSectors?: boolean;
     parseNodes?: boolean;
@@ -105,8 +105,15 @@ export class WadFile {
         return this._internalLog;
     }
 
-    get fileName(): string {
+    get fileUrl(): string {
         return this._fileUrl;
+    }
+
+    get niceFileName(): string {
+        const removeWad = this._fileUrl.split(/[.]WAD/i)[0];
+        const afterSlash = removeWad.split('/').pop();
+        if (afterSlash) return afterSlash;
+        else return removeWad;
     }
 
     get wadLoaded(): boolean {
@@ -149,7 +156,7 @@ export class WadFile {
         return this.wadLoadAttempted && this.wadLoaded && this.wadFile.byteLength > 0;
     }
 
-    public loadFile(file: File, callback?: (success: boolean, err?: string) => any): void {
+    public loadFile(file: File, callback?: (success: boolean, err?: string) => void): void {
         this.wadLoadAttempted = true;
         this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
         this._fileUrl = file.name;
@@ -174,7 +181,7 @@ export class WadFile {
         }
     }
 
-    public loadFileFromUrl(fileUrl: string, callback?: (success: boolean, err?: string) => any): void {
+    public loadFileFromUrl(fileUrl: string, callback?: (success: boolean, err?: string) => void): void {
         this.wadLoadAttempted = true;
         this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
         this._fileUrl = fileUrl;
@@ -210,8 +217,7 @@ export class WadFile {
         const view = new Uint8Array(this.wadFile, 0, 12);
         const type: WadType = utf8ArrayToStr(view.subarray(0, 4)) as WadType;
         if (type !== WadType.IWAD && type !== WadType.PWAD) {
-            console.error('Loaded file is not of type WAD:', type);
-
+            console.error();
             return null;
         }
         const directoryEntryCount: number = new Int32Array(view.buffer.slice(4, 8))[0];
@@ -759,7 +765,6 @@ export class WadFile {
             }
             maps.push(map);
         }
-        mapGroups.forEach((mapGroup) => {});
         this.setMaps(maps);
         return maps;
     }
