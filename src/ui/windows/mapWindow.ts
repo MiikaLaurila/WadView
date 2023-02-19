@@ -4,6 +4,7 @@ import { getMaps, getNiceFileName, getPlaypal } from '../..';
 import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
+import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
 import { isBlueDoor, isRedDoor, isYellowDoor, isExit, isTeleporter } from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadPlayPalTypedEntry } from '../../interfaces/wad/WadPlayPal';
@@ -260,7 +261,7 @@ const initializeMap = () => {
         backgroundColor: 0x000000,
         width: dim.width + canvasPadding * 2,
         height: dim.height + canvasPadding * 2,
-        antialias: true,
+        antialias: !renderFull,
         preserveDrawingBuffer: true
     });
 
@@ -545,15 +546,21 @@ const drawThings = (graphy: Graphics) => {
 }
 
 const drawBlockmap = (graphy: Graphics): void => {
-    if (!app || !playpal) return;
-    console.log(mapData.blockMap);
-    const ppal = playpal;
-    const colCount = mapData.blockMap.columns;
-    const rowCount = mapData.blockMap.rows;
+    if (!app || !playpal || !bounds) return;
+    const blockMap = JSON.parse(JSON.stringify(mapData.blockMap)) as WadMapBlockMap;
     const gridSize = 128;
+    if (blockMap.xOrigin === undefined) {
+        blockMap.xOrigin = bounds.left;
+        blockMap.yOrigin = bounds.top;
+        blockMap.columns = Math.abs((blockMap.xOrigin - bounds.right) / gridSize);
+        blockMap.rows = Math.abs((blockMap.yOrigin - bounds.bottom) / gridSize);
+    }
+    const ppal = playpal;
+    const colCount = blockMap.columns;
+    const rowCount = blockMap.rows;
     const gridColor = ppal[107].hex;
-    const x0Orig = mapData.blockMap.xOrigin;
-    const y0Orig = mapData.blockMap.yOrigin;
+    const x0Orig = blockMap.xOrigin;
+    const y0Orig = blockMap.yOrigin;
     const x1Orig = x0Orig + colCount * gridSize;
     const y1Orig = y0Orig + rowCount * gridSize;
     const xy0 = transformMapPointToCanvas({ x: x0Orig, y: y0Orig });
