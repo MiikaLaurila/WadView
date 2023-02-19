@@ -1,5 +1,5 @@
 {
-  "name": "wadviewraw",
+  "name": "wadview",
   "version": "1.0.0",
   "description": "View Wads",
   "main": "index.ts",

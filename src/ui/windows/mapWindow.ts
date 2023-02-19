@@ -5,7 +5,7 @@ import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
 import { isBlueDoor, isRedDoor, isYellowDoor, isExit, isTeleporter } from '../../interfaces/wad/map/WadMapLinedef';
-import { WadMapThing, WadMapThingGroupRenderable } from '../../interfaces/wad/map/WadMapThing';
+import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadPlayPalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';
 import { createModule } from '../main/contentModule';
@@ -39,20 +39,21 @@ interface HoverData {
     y: number;
     things: WadMapThing[];
 }
-let lineCache: Record<string, LineCacheEntry[]> = {};
-let thingCache: Record<string, ThingCacheEntry[]> = {};
 
 const mapWindowId = 'map-window';
 const mapWindowCanvasId = 'map-window-canvas';
 const bottomAreaId = 'map-window-bottom-area';
 const toggleAreaId = 'map-window-toggle-area';
 const buttonContainerId = 'map-window-button-container';
-const maxResImage = 5192;
+const debounceCheckId = 'map-window-button-debounce-check';
+const maxResId = 'map-window-input-maxres';
 const canvasPadding = 10;
-let maxWidth = (window.innerWidth - 230) - canvasPadding * 2;
-let maxHeight = Math.min(1080, window.innerHeight - 180) - canvasPadding * 2;
-let renderFull = false;
+const widthOffset = 216;
+const heightOffset = 190;
 
+let maxWidth = (window.innerWidth - widthOffset) - canvasPadding * 2;
+let maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
+let renderFull = false;
 let mapData: WadMap = defaultWadMap;
 let playpal: WadPlayPalTypedEntry | null = null;
 let bounds: WadMapBBox | null = null;
@@ -60,11 +61,17 @@ let dim: Dimensions | null = null;
 let app: Application | null = null;
 let viewport: Viewport | null = null;
 let hoverDivs: HTMLDivElement[] = [];
-let enabledThingGroups: WadMapThingGroupRenderable[] = [];
+let enabledThingGroups: WadMapThingGroup[] = [];
 let showMultiPlayer = 0;
 let showDifficulty = 0;
 let hideDifficulty = 0;
+let showBlockmap = false;
 let showGrid = false;
+let debounceZoomEvts = false;
+let maxResImage = 5192;
+let lineCache: Record<string, LineCacheEntry[]> | null = null;
+let otherThingCache: ThingCacheEntry[] | null = null;
+let monsterThingCache: ThingCacheEntry[] | null = null;
 
 window.addEventListener('resize', () => {
     maxWidth = (window.innerWidth - 230) - canvasPadding * 2;
@@ -115,8 +122,9 @@ export const initMapWindowModule = (mapName: string) => {
 const clearData = () => {
     bounds = null;
     dim = null;
-    thingCache = {};
-    lineCache = {};
+    otherThingCache = null;
+    monsterThingCache = null;
+    lineCache = null;
 }
 
 const onCanvasMouseMove = (event: MouseEvent) => {
@@ -128,7 +136,7 @@ const onCanvasMouseMove = (event: MouseEvent) => {
     const viewportMousePos = { x: event.pageX, y: event.pageY };
     const topLeftCanvasPos = {
         x: canvasRef.offsetLeft + 208,
-        y: canvasRef.offsetTop + 48,
+        y: canvasRef.offsetTop + 43,
     };
 
     const canvasCoord = diffPoints(viewportMousePos, topLeftCanvasPos);
@@ -154,7 +162,7 @@ const onCanvasMouseMove = (event: MouseEvent) => {
     };
     const things = mapData.things
         .filter(t => thingIsRenderable(t))
-        .filter(t => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size));
+        .filter(t => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size * 2));
     if (things.length > 0) {
         drawHover({ x: viewportMousePos.x, y: viewportMousePos.y, things });
     } else if (hoverDivs.length > 0) {
@@ -234,7 +242,7 @@ const setDimensions = (): void => {
     }
     const offset = {
         x: (maxW - mapWidth * scale) / 2,
-        y: (maxH - mapHeight * scale) / 2 - 2,
+        y: (maxH - mapHeight * scale) / 2,
     };
     dim = { height: maxH, width: maxW, scale, offset };
 };
@@ -281,15 +289,23 @@ const initializeMap = () => {
     const debounceTime = 500;
     let timeout: NodeJS.Timeout | null = null;
     viewport.on('zoomed-end', () => {
-        if (timeout) {
-            clearTimeout(timeout);
+        if (debounceZoomEvts) {
+            if (timeout) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(() => {
+                if (viewport) {
+                    const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
+                    reDrawMap(lineWidth);
+                }
+            }, debounceTime);
         }
-        timeout = setTimeout(() => {
+        else {
             if (viewport) {
                 const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
                 reDrawMap(lineWidth);
             }
-        }, debounceTime);
+        }
     });
 }
 
@@ -332,26 +348,30 @@ const transformMapXToCanvas = (x: number): number => {
 
 const reDrawMap = (lineWidth = 1) => {
     if (viewport) {
-        viewport.children[0].destroy();
-        const graphy: Graphics = new Graphics();
-        drawMap(graphy, lineWidth);
-        viewport.addChild(graphy);
+        const oldGraphics = viewport.children[0] as Graphics;
+        if (oldGraphics) {
+            oldGraphics.clear();
+            drawMap(oldGraphics, lineWidth);
+            viewport.addChild(oldGraphics);
+        }
     }
 }
 
 const drawMap = (graphy: Graphics, lineWidth = 1) => {
-    drawLines(graphy, lineWidth);
-    drawThings(graphy, lineWidth);
-    if (showGrid) drawGrid(graphy, lineWidth);
+    graphy.lineStyle({ width: lineWidth });
+    drawLines(graphy);
+    drawThings(graphy);
+    if (showBlockmap) drawBlockmap(graphy);
+    if (showGrid) drawGrid(graphy);
 }
 
-const drawLines = (graphy: Graphics, lineWidth = 1) => {
+const drawLines = (graphy: Graphics) => {
     if (!app || !playpal) return;
     const ppal = playpal;
-    if (Object.keys(lineCache).length > 0) {
+    if (lineCache && Object.keys(lineCache).length > 0) {
         Object.keys(lineCache).forEach((key: string) => {
-            lineCache[key].forEach((line) => {
-                graphy.lineStyle(lineWidth, utils.string2hex(key));
+            lineCache?.[key].forEach((line) => {
+                graphy.lineStyle({ color: utils.string2hex(key), width: graphy.line.width });
                 graphy.drawPolygon([line.vStart, line.vEnd]);
             });
         });
@@ -404,8 +424,9 @@ const drawLines = (graphy: Graphics, lineWidth = 1) => {
                     color = ppal[180].hex;
                 }
 
-                graphy.lineStyle(lineWidth, utils.string2hex(color));
+                graphy.lineStyle({ color: utils.string2hex(color), width: graphy.line.width });
                 graphy.drawPolygon([vStart, vEnd]);
+                if (!lineCache) lineCache = {};
                 if (!lineCache[color]) lineCache[color] = [];
                 lineCache[color].push({ vStart, vEnd, color });
             });
@@ -413,7 +434,7 @@ const drawLines = (graphy: Graphics, lineWidth = 1) => {
 }
 
 const thingIsRenderable = (t: WadMapThing): boolean => {
-    if (!enabledThingGroups.includes(t.thingGroup as WadMapThingGroupRenderable)) return false;
+    if (!enabledThingGroups.includes(t.thingGroup as WadMapThingGroup)) return false;
     if (showMultiPlayer === 1 && t.flagsString.includes('NET_ONLY')) return false;
     if (showMultiPlayer === 2 && !t.flagsString.includes('NET_ONLY')) return false;
     if (showDifficulty === 1 && !t.flagsString.includes('ON_SKILL_EASY')) return false;
@@ -455,59 +476,77 @@ const drawTriangle = (
 
 const getDotSize = (size: number): number => {
     if (!dim) return size;
-    return (size + 5) * dim.scale;
+    return size * dim.scale;
 };
 
-const drawThings = (graphy: Graphics, lineWidth = 1) => {
-    if (Object.keys(thingCache).length > 0) {
-        Object.keys(thingCache).forEach((key: string) => {
-            thingCache[key].forEach((thing, idx, arr) => {
-                const scaledDotSize = getDotSize(thing.size - idx * (thing.size / arr.length));
-                const x = thing.pos.x;
-                const y = thing.pos.y;
+const drawThings = (graphy: Graphics) => {
+    if (otherThingCache && monsterThingCache) {
+        otherThingCache.forEach((thing) => {
+            const dotSize = getDotSize(thing.size * 2);
+            const x = thing.pos.x;
+            const y = thing.pos.y;
+            const ogLineW = graphy.line.width;
+            graphy.lineStyle({ color: utils.string2hex(thing.color), alignment: 1, width: 0 });
+            graphy.beginFill(utils.string2hex(thing.color));
+            graphy.drawRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
+            graphy.endFill();
+            graphy.lineStyle({ width: ogLineW });
 
-                if (thing.isDot) {
-                    graphy.lineStyle(0, utils.string2hex(thing.color))
-                    graphy.beginFill(utils.string2hex(thing.color));
-                    graphy.drawRect(x - scaledDotSize / 2, y - scaledDotSize / 2, scaledDotSize, scaledDotSize);
-                    graphy.endFill();
-                } else if (thing.trianglePoints) {
-                    const points = thing.trianglePoints;
-                    graphy.lineStyle(lineWidth, utils.string2hex(thing.color));
-                    graphy.drawPolygon(points[0], points[1], points[2]);
-                }
-            });
         });
-    } else {
+
+        monsterThingCache.forEach((thing) => {
+            if (thing.trianglePoints) {
+                const points = thing.trianglePoints;
+                graphy.lineStyle({ color: utils.string2hex(thing.color), alignment: 1, width: graphy.line.width });
+                graphy.drawPolygon(points[0], points[1], points[2]);
+            }
+        });
+
+    }
+    else {
         mapData.things
             .filter(t => thingIsRenderable(t))
+            .sort((a, b) => b.size - a.size)
+            .sort((a, b) => {
+                if (
+                    a.thingGroup === WadMapThingGroup.MONSTER
+                    && b.thingGroup !== WadMapThingGroup.MONSTER
+                ) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            })
             .forEach((thing) => {
                 const xy = transformMapPointToCanvas({ x: thing.x, y: thing.y });
                 const x = xy.x;
                 const y = xy.y;
-                const cacheKey = `${x}|${y}`;
-                const color = getThingColor(thing.thingGroup as WadMapThingGroupRenderable);
-                const isDot = thing.thingGroup !== WadMapThingGroupRenderable.MONSTER;
-                const dotSize = getDotSize(thing.size);
-                if (isDot) {
-                    graphy.lineStyle(0, utils.string2hex(color))
+                const color = getThingColor(thing.thingGroup as WadMapThingGroup);
+                const isMonster = thing.thingGroup === WadMapThingGroup.MONSTER;
+                const dotSize = getDotSize(thing.size * 2);
+                if (!monsterThingCache) monsterThingCache = [];
+                if (!otherThingCache) otherThingCache = [];
+                if (!isMonster) {
+                    const ogLineW = graphy.line.width;
+                    graphy.lineStyle({ color: utils.string2hex(color), alignment: 1, width: graphy.line.width * 0 })
                     graphy.beginFill(utils.string2hex(color));
                     graphy.drawRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
                     graphy.endFill();
-                    if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
-                    thingCache[cacheKey].push({ pos: { x, y }, color, isDot, size: thing.size });
+                    graphy.lineStyle({ width: ogLineW });
+                    otherThingCache.push({ pos: { x, y }, color, isDot: isMonster, size: thing.size });
                 } else {
-                    graphy.lineStyle(lineWidth, utils.string2hex(color));
+                    graphy.lineStyle({ color: utils.string2hex(color), alignment: 1, width: graphy.line.width });
                     const trianglePoints = drawTriangle(graphy, x, y, dotSize, thing.angle);
-                    if (!thingCache[cacheKey]) thingCache[cacheKey] = [];
-                    thingCache[cacheKey].push({ pos: { x, y }, color, isDot, trianglePoints, size: thing.size });
+                    monsterThingCache.push({ pos: { x, y }, color, isDot: isMonster, trianglePoints, size: thing.size });
                 }
             });
     }
+
 }
 
-const drawGrid = (graphy: Graphics, lineWidth: number): void => {
+const drawBlockmap = (graphy: Graphics): void => {
     if (!app || !playpal) return;
+    console.log(mapData.blockMap);
     const ppal = playpal;
     const colCount = mapData.blockMap.columns;
     const rowCount = mapData.blockMap.rows;
@@ -519,7 +558,8 @@ const drawGrid = (graphy: Graphics, lineWidth: number): void => {
     const y1Orig = y0Orig + rowCount * gridSize;
     const xy0 = transformMapPointToCanvas({ x: x0Orig, y: y0Orig });
     const xy1 = transformMapPointToCanvas({ x: x1Orig, y: y1Orig });
-    graphy.lineStyle(lineWidth / 2, utils.string2hex(gridColor));
+    const ogLineW = graphy.line.width;
+    graphy.lineStyle({ color: utils.string2hex(gridColor), alignment: 1, width: graphy.line.width * 0.5 });
     for (let i = 0; i < rowCount + 1; i++) {
         const yStart = transformMapYToCanvas(y0Orig + i * gridSize);
         graphy.drawPolygon([{ x: xy0.x, y: yStart }, { x: xy1.x, y: yStart }]);
@@ -529,17 +569,53 @@ const drawGrid = (graphy: Graphics, lineWidth: number): void => {
         const xStart = transformMapXToCanvas(x0Orig + i * gridSize);
         graphy.drawPolygon([{ x: xStart, y: xy0.y }, { x: xStart, y: xy1.y }]);
     }
+    graphy.lineStyle({ width: ogLineW });
 };
 
-const getHoverSpan = (head: string, txt: string) => {
-    const headSpan = document.createElement('span');
-    headSpan.innerText = head;
-    headSpan.classList.add('map-hover-span-head');
+const drawGrid = (graphy: Graphics): void => {
+    if (!app || !playpal || !bounds) return;
+    const ppal = playpal;
+    const round32 = (num: number) => {
+        return Math.round(num / 32) * 32;
+    }
+
+    const gridSize = 32;
+    const gridColor32 = ppal[107].hex;
+    const gridColor64 = ppal[195].hex;
+    const x0Orig = round32(bounds.left);
+    const y0Orig = round32(bounds.top);
+    const x1Orig = round32(bounds.right);
+    const y1Orig = round32(bounds.bottom);
+    const colCount = Math.abs((x0Orig - x1Orig) / gridSize);
+    const rowCount = Math.abs((y0Orig - y1Orig) / gridSize);
+    const xy0 = transformMapPointToCanvas({ x: x0Orig, y: y0Orig });
+    const xy1 = transformMapPointToCanvas({ x: x1Orig, y: y1Orig });
+    const ogLineW = graphy.line.width;
+    for (let i = 0; i < rowCount + 1; i++) {
+        const is64 = i % 2 === 0;
+        graphy.lineStyle({ color: utils.string2hex(is64 ? gridColor64 : gridColor32), width: ogLineW * 0.3 });
+        const yStart = transformMapYToCanvas(y0Orig + i * gridSize);
+        graphy.drawPolygon([{ x: xy0.x, y: yStart }, { x: xy1.x, y: yStart }]);
+    }
+
+    for (let i = 0; i < colCount + 1; i++) {
+        const is64 = i % 2 === 0;
+        graphy.lineStyle({ color: utils.string2hex(is64 ? gridColor64 : gridColor32), width: ogLineW * 0.3 });
+        const xStart = transformMapXToCanvas(x0Orig + i * gridSize);
+        graphy.drawPolygon([{ x: xStart, y: xy0.y }, { x: xStart, y: xy1.y }]);
+    }
+    graphy.lineStyle({ width: ogLineW });
+};
+
+const getHoverRow = (head: string, txt: string) => {
+    const row = document.createElement('p');
+    row.innerText = head;
+    row.classList.add('map-hover-row');
     const txtSpan = document.createElement('span');
     txtSpan.classList.add('map-hover-span-text');
     txtSpan.innerHTML = txt;
-    headSpan.appendChild(txtSpan);
-    return headSpan;
+    row.appendChild(txtSpan);
+    return row;
 }
 
 const drawHover = (data: HoverData) => {
@@ -547,11 +623,12 @@ const drawHover = (data: HoverData) => {
     const parent = document.getElementById('map');
     if (!parent) return;
     let cumulativeHeight = 0;
+    const rowHeight = 13;
     const width = 220;
 
     data.things.forEach((t, idx) => {
-        const flagRoom = t.flagsString.length * 20;
-        const height = 70 + flagRoom;
+        const flagRoom = t.flagsString.length * rowHeight;
+        const height = (4 * rowHeight) + flagRoom;
         cumulativeHeight += height + 5;
         const top = data.y - 10 - cumulativeHeight - window.scrollY;
         let left = data.x - 90;
@@ -567,13 +644,10 @@ const drawHover = (data: HoverData) => {
         hoverDiv.style.left = `${left}px`;
         hoverDiv.style.width = `${width}px`;
         hoverDiv.style.height = `${height}px`;
-        hoverDiv.appendChild(getHoverSpan('TYPE: ', `${t.thingType} | ${t.thingTypeString}`));
-        hoverDiv.appendChild(document.createElement('br'));
-        hoverDiv.appendChild(getHoverSpan('GRP: ', `${t.thingGroup}`));
-        hoverDiv.appendChild(document.createElement('br'));
-        hoverDiv.appendChild(getHoverSpan('POS: ', `(${t.x},${t.y}) | ${t.angle}`));
-        hoverDiv.appendChild(document.createElement('br'));
-        hoverDiv.appendChild(getHoverSpan('FLAGS:', `${t.flagsString.map(f => `<br/><span>${f}</span>`).join('\n')}`));
+        hoverDiv.appendChild(getHoverRow('TYPE: ', `${t.thingType} | ${t.thingTypeString}`));
+        hoverDiv.appendChild(getHoverRow('GRP: ', `${t.thingGroup}`));
+        hoverDiv.appendChild(getHoverRow('POS: ', `(${t.x},${t.y}) | ${t.angle} | ${t.size}`));
+        hoverDiv.appendChild(getHoverRow('FLAGS:', `${t.flagsString.map(f => `<br/><span>${f}</span>`).join('\n')}`));
         parent.appendChild(hoverDiv);
         hoverDivs.push(hoverDiv);
 
@@ -593,6 +667,9 @@ const clearHover = () => {
 const getButtonArea = (mapName: string) => {
     const buttonContainer = document.createElement('div');
     buttonContainer.id = buttonContainerId;
+    const upperButtons = document.createElement('div');
+    const lowerSettings = document.createElement('div');
+    lowerSettings.style.display = 'block';
 
     const saveFullButton = document.createElement('button');
     saveFullButton.innerText = 'Save Full';
@@ -616,7 +693,7 @@ const getButtonArea = (mapName: string) => {
             });
         }
     };
-    buttonContainer.appendChild(saveFullButton);
+    upperButtons.appendChild(saveFullButton);
 
     const saveCurrButton = document.createElement('button');
     saveCurrButton.innerText = 'Save Current View';
@@ -631,14 +708,53 @@ const getButtonArea = (mapName: string) => {
             link.click();
         }
     };
-    buttonContainer.appendChild(saveCurrButton);
+    upperButtons.appendChild(saveCurrButton);
 
     const resetButton = document.createElement('button');
     resetButton.innerText = 'Reset';
     resetButton.onclick = () => {
         initMapWindowModule(mapName);
     };
-    buttonContainer.appendChild(resetButton);
+    upperButtons.appendChild(resetButton);
+
+    const maxResParent = document.createElement('div');
+    const maxRes = document.createElement('input');
+    maxRes.type = 'text';
+    maxRes.id = maxResId;
+    maxRes.value = maxResImage.toString();
+    maxRes.oninput = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const nan = isNaN(Number(target.value))
+        if (!nan) {
+            maxResImage = Number(target.value);
+        }
+        target.value = maxResImage.toString();
+    }
+    const maxResText = document.createElement('label');
+    maxResText.innerHTML = 'Maximum resolution';
+    maxResText.htmlFor = maxResId;
+    maxResParent.appendChild(maxResText);
+    maxResParent.appendChild(maxRes);
+    lowerSettings.appendChild(maxResParent);
+
+    const debounceCheckParent = document.createElement('div');
+    const debounceCheck = document.createElement('input');
+    debounceCheck.type = 'checkbox';
+    debounceCheck.id = debounceCheckId;
+    debounceCheck.checked = debounceZoomEvts;
+    debounceCheck.onclick = () => {
+        debounceZoomEvts = !debounceZoomEvts;
+        debounceCheck.checked = debounceZoomEvts;
+    }
+    const debounceCheckText = document.createElement('label');
+    debounceCheckText.innerHTML = 'Debounce zoom events';
+    debounceCheckText.htmlFor = debounceCheckId;
+    debounceCheckParent.appendChild(debounceCheckText);
+    debounceCheckParent.appendChild(debounceCheck);
+    lowerSettings.appendChild(debounceCheckParent);
+
+    buttonContainer.appendChild(upperButtons);
+    buttonContainer.appendChild(lowerSettings);
     return buttonContainer;
 }
 
@@ -659,8 +775,10 @@ const refreshBottomAreaAndMap = (mapName: string) => {
         windowArea.appendChild(getBottomArea(mapName))
     }
     if (viewport) {
-        thingCache = {};
-        reDrawMap(Math.max(1 / viewport.scale.x, 0.05));
+        otherThingCache = null;
+        monsterThingCache = null;
+        const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
+        reDrawMap(lineWidth);
     }
 }
 
@@ -676,11 +794,23 @@ const getToggleArea = (mapName: string) => {
     const thingButtonContainer = document.createElement('div');
     toggleAreaParent.appendChild(thingButtonContainer);
 
-    const generateThingToggleButton = (toggle: WadMapThingGroupRenderable | 'ALL') => {
+    const generateThingToggleButton = (toggle: WadMapThingGroup | 'ALL' | 'DECO') => {
         const container = document.createElement('div');
         const isSelected = () => {
-            if (toggle === 'ALL' && enabledThingGroups.length === 7) return true;
-            else return enabledThingGroups.includes(toggle as WadMapThingGroupRenderable);
+            if (toggle === 'ALL' && enabledThingGroups.length === 9) {
+                return true;
+            }
+            else if (
+                toggle === 'DECO'
+                && enabledThingGroups.includes(WadMapThingGroup.DECORATION)
+                && enabledThingGroups.includes(WadMapThingGroup.OBSTACLE)
+            ) {
+                return true;
+            }
+            else if (toggle !== 'ALL' && toggle !== 'DECO') {
+                return enabledThingGroups.includes(toggle as WadMapThingGroup);
+            }
+            return false;
         }
         container.style.opacity = isSelected() ? '1.0 ' : '0.5';
         const square = document.createElement('div');
@@ -689,24 +819,31 @@ const getToggleArea = (mapName: string) => {
         const textEl = document.createElement('p');
         textEl.innerText = toggle;
 
-        container.onclick = () => {
-            if (toggle !== 'ALL') {
-                let copy = [...enabledThingGroups];
-                if (isSelected()) {
-                    copy = copy.filter(t => t !== toggle);
-                }
-                else {
-                    copy.push(toggle);
-                }
-                enabledThingGroups = copy;
+        const removeOrAddToggle = (groups: WadMapThingGroup[]) => {
+            let copy = [...enabledThingGroups];
+            if (isSelected()) {
+                copy = copy.filter(t => !groups.includes(t));
             }
             else {
+                copy.push(...groups);
+            }
+            enabledThingGroups = copy;
+        }
+
+        container.onclick = () => {
+            if (toggle === 'ALL') {
                 if (isSelected()) {
                     enabledThingGroups = [];
                 }
                 else {
-                    enabledThingGroups = Object.keys(WadMapThingGroupRenderable) as WadMapThingGroupRenderable[];
+                    enabledThingGroups = Object.keys(WadMapThingGroup).filter(k => k !== WadMapThingGroup.UNKNOWN) as WadMapThingGroup[];
                 }
+            }
+            else if (toggle === 'DECO') {
+                removeOrAddToggle([WadMapThingGroup.OBSTACLE, WadMapThingGroup.DECORATION]);
+            }
+            else {
+                removeOrAddToggle([toggle]);
             }
             refreshBottomAreaAndMap(mapName);
         }
@@ -715,13 +852,14 @@ const getToggleArea = (mapName: string) => {
         return container;
     }
 
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.MONSTER));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.ARTIFACT));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.POWERUP));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.WEAPON));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.AMMO));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.KEY));
-    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroupRenderable.OTHER));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.MONSTER));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.ARTIFACT));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.POWERUP));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.WEAPON));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.AMMO));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.KEY));
+    thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.OTHER));
+    thingButtonContainer.appendChild(generateThingToggleButton('DECO'));
     thingButtonContainer.appendChild(generateThingToggleButton('ALL'));
 
     const flagsHead = document.createElement('p');
@@ -786,17 +924,17 @@ const getToggleArea = (mapName: string) => {
         return container;
     }
 
-    const generateGridButton = () => {
+    const generateBoolButton = (text: string, onToggle: () => void, state: boolean) => {
         const container = document.createElement('div');
         const square = document.createElement('div');
         square.style.backgroundColor = 'white';
-        square.style.backgroundImage = showGrid ? 'url("x.png")' : '';
+        square.style.backgroundImage = state ? 'url("x.png")' : '';
         container.appendChild(square);
         const textEl = document.createElement('p');
-        textEl.innerText = 'Grid';
+        textEl.innerText = text;
 
         container.onclick = () => {
-            showGrid = !showGrid;
+            onToggle();
             refreshBottomAreaAndMap(mapName);
         }
 
@@ -804,10 +942,11 @@ const getToggleArea = (mapName: string) => {
         return container;
     }
 
-    flagAreaContainer.appendChild(generateNetToggleButton())
-    flagAreaContainer.appendChild(generateDifficultyButton('show'))
-    flagAreaContainer.appendChild(generateDifficultyButton('hide'))
-    flagAreaContainer.appendChild(generateGridButton())
+    flagAreaContainer.appendChild(generateNetToggleButton());
+    flagAreaContainer.appendChild(generateDifficultyButton('show'));
+    flagAreaContainer.appendChild(generateDifficultyButton('hide'));
+    flagAreaContainer.appendChild(generateBoolButton('Blockmap', () => showBlockmap = !showBlockmap, showBlockmap));
+    flagAreaContainer.appendChild(generateBoolButton('Grid', () => showGrid = !showGrid, showGrid));
 
 
     return toggleAreaParent;

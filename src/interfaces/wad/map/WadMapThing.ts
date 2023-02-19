@@ -372,7 +372,7 @@ export const extractWadMapThingFlags = (flags: number): WadMapThingFlagType[] =>
     return foundFlags;
 };
 
-export enum WadMapThingGroupRenderable {
+export enum WadMapThingGroup {
     OTHER = 'OTHER',
     MONSTER = 'MONSTER',
     POWERUP = 'POWERUP',
@@ -380,37 +380,32 @@ export enum WadMapThingGroupRenderable {
     KEY = 'KEY',
     WEAPON = 'WEAPON',
     AMMO = 'AMMO',
-}
-
-export enum WadMapThingGroupHidden {
     DECORATION = 'DECORATION',
     OBSTACLE = 'OBSTACLE',
     UNKNOWN = 'UNKNOWN',
 }
 
-export type WadMapThingGroup = WadMapThingGroupHidden | WadMapThingGroupRenderable;
-
 export const getWadMapThingGroup = (thingString: WadThingType): WadMapThingGroup => {
     if (isWadMonsterThing(thingString)) {
-        return WadMapThingGroupRenderable.MONSTER;
+        return WadMapThingGroup.MONSTER;
     } else if (isWadDecorationThing(thingString)) {
-        return WadMapThingGroupHidden.DECORATION;
+        return WadMapThingGroup.DECORATION;
     } else if (isWadObstacleThing(thingString)) {
-        return WadMapThingGroupHidden.OBSTACLE;
+        return WadMapThingGroup.OBSTACLE;
     } else if (isWadOtherThing(thingString)) {
-        return WadMapThingGroupRenderable.OTHER;
+        return WadMapThingGroup.OTHER;
     } else if (isWadPowerupThing(thingString)) {
-        return WadMapThingGroupRenderable.POWERUP;
+        return WadMapThingGroup.POWERUP;
     } else if (isWadArtifactThing(thingString)) {
-        return WadMapThingGroupRenderable.ARTIFACT;
+        return WadMapThingGroup.ARTIFACT;
     } else if (isWadKeyThing(thingString)) {
-        return WadMapThingGroupRenderable.KEY;
+        return WadMapThingGroup.KEY;
     } else if (isWadWeaponThing(thingString)) {
-        return WadMapThingGroupRenderable.WEAPON;
+        return WadMapThingGroup.WEAPON;
     } else if (isWadAmmoThing(thingString)) {
-        return WadMapThingGroupRenderable.AMMO;
+        return WadMapThingGroup.AMMO;
     }
-    return WadMapThingGroupHidden.UNKNOWN;
+    return WadMapThingGroup.UNKNOWN;
 };
 
 export interface WadMapThing {

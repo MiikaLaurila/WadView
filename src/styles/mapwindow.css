@@ -2,62 +2,112 @@
     display: flex;
     position: relative;
     top: -4px;
-    font-family: monospace;
+    font-family: Arial;
 }
 
-#map-window-button-container {
+#map-window-button-container>div {
+    margin-top: 8px;
+    margin-left: 8px;
+    position: relative;
+}
+
+#map-window-button-container>div:first-of-type {
     display: flex;
     gap: 8px;
     height: 25px;
-    margin-top: 8px;
-    margin-left: 8px;
+    align-items: center;
+    user-select: none;
+}
+
+#map-window-button-container>div:last-of-type>div {
+    margin-bottom: 8px;
+}
+
+#map-window-button-container>div:last-of-type>div:first-of-type:hover::after {
+    display: block;
+    position: absolute;
+    font-size: 10px;
+    width: 170px;
+    padding: 8px;
+    background-color: white;
+    border: 1px solid black;
+    top: -55px;
+    left: 150px;
+    content: "Values over 5192 can cause issues with some browsers. Firefox should work upto 10000.";
+    margin-bottom: 8px;
+}
+
+#map-window-button-container>div:last-of-type>div:last-of-type:hover::after {
+    display: block;
+    position: absolute;
+    font-size: 10px;
+    width: 180px;
+    padding: 8px;
+    background-color: white;
+    border: 1px solid black;
+    top: -10px;
+    left: 150px;
+    content: "Wait 500ms after last zoom to re-render. Helps with huge maps.";
+    margin-bottom: 8px;
+}
+
+#map-window-button-container>div:last-of-type>div>label {
+    font-size: 12px;
+    width: 150px;
+    display: inline-block;
+    user-select: none;
+}
+
+#map-window-button-container>div>label {
+    font-size: 12px;
 }
 
 #map-window-toggle-area {
     width: 450px;
-    padding-bottom: 8px;
     background-color: black;
+    user-select: none;
+    font-family: 'Roboto Mono';
 }
 
-#map-window-toggle-area p {
+#map-window-toggle-area>p {
     color: white;
     text-align: center;
     width: 100%;
     margin: 0;
     padding: 0;
-    user-select: none;
+    font-size: 12px;
 }
 
-#map-window-toggle-area div {
+#map-window-toggle-area>div {
     display: flex;
     height: 40px;
     width: 100%;
     flex-wrap: nowrap;
     gap: 8px;
     margin-left: 2px;
-    margin-top: 1px;
+    margin-top: 4px;
 }
 
-#map-window-toggle-area div:hover {
+#map-window-toggle-area>div:hover {
     cursor: pointer;
 }
 
-#map-window-toggle-area div div {
+#map-window-toggle-area>div>div {
     display: block;
     height: 40px;
     width: 50px;
 }
 
-#map-window-toggle-area div div div {
+#map-window-toggle-area>div>div>div {
     height: 20px;
     width: 20px;
     margin-left: auto;
     margin-right: auto;
 }
 
-#map-window-toggle-area div div p {
+#map-window-toggle-area>div>div>p {
     color: white;
-    font-size: 10px;
+    font-size: 9px;
     width: 100%;
     text-align: center;
     margin: 0;
@@ -75,9 +125,10 @@
     padding-left: 2px;
 }
 
-.map-hover-span-head {
+.map-hover-row {
     font-weight: bold;
     white-space: nowrap;
+    padding: 1px 0 0 0;
 }
 
 .map-hover-span-text {

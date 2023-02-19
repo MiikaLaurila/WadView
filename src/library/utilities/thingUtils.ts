@@ -1,20 +1,22 @@
-import { WadMapThingGroupRenderable } from '../../interfaces/wad/map/WadMapThing';
+import { WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 
-export const getThingColor = (thingGroup: WadMapThingGroupRenderable | 'ALL'): string => {
-    if (thingGroup === WadMapThingGroupRenderable.OTHER) {
+export const getThingColor = (thingGroup: WadMapThingGroup | 'ALL' | 'DECO'): string => {
+    if (thingGroup === WadMapThingGroup.OTHER) {
         return 'lime';
-    } else if (thingGroup === WadMapThingGroupRenderable.MONSTER) {
+    } else if (thingGroup === WadMapThingGroup.MONSTER) {
         return 'red';
-    } else if (thingGroup === WadMapThingGroupRenderable.POWERUP) {
-        return 'cyan';
-    } else if (thingGroup === WadMapThingGroupRenderable.ARTIFACT) {
-        return 'magenta';
-    } else if (thingGroup === WadMapThingGroupRenderable.KEY) {
-        return 'yellow';
-    } else if (thingGroup === WadMapThingGroupRenderable.WEAPON) {
+    } else if (thingGroup === WadMapThingGroup.POWERUP) {
         return 'blue';
-    } else if (thingGroup === WadMapThingGroupRenderable.AMMO) {
-        return 'navy';
+    } else if (thingGroup === WadMapThingGroup.ARTIFACT) {
+        return 'cyan';
+    } else if (thingGroup === WadMapThingGroup.KEY) {
+        return 'magenta';
+    } else if (thingGroup === WadMapThingGroup.WEAPON) {
+        return 'yellow';
+    } else if (thingGroup === WadMapThingGroup.AMMO) {
+        return '#ad7e0a';
+    } else if (thingGroup === WadMapThingGroup.OBSTACLE || thingGroup === WadMapThingGroup.DECORATION || thingGroup === 'DECO') {
+        return 'pink';
     } else if (thingGroup === 'ALL') {
         return 'white';
     } else return 'black';

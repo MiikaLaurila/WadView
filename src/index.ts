@@ -9,12 +9,15 @@ import { initializeSideBarMeta, initializeSideBarColors, initializeSideBarMaps }
 import { setTopBarFileName } from './ui/main/topbar';
 import { initWadInput } from './ui/main/wadInput';
 import { addLogWindowMessage } from './ui/windows/logWindow';
+import './styles/reset.css';
+import './styles/index.css';
 import './styles/sidebar.css';
 import './styles/content.css';
 import './styles/logwindow.css';
 import './styles/playpal.css';
 import './styles/topbar.css';
 import './styles/mapwindow.css';
+import './styles/robomono.css';
 
 let header: WadHeader = defaultWadHeader;
 let directory: WadDirectory = [];
