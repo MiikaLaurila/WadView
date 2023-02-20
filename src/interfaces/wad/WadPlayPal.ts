@@ -1,24 +1,24 @@
-export type WadPlayPalRaw = number[][];
-export interface WadPlayPalColor {
+export type WadPlaypalRaw = number[][];
+export interface WadPlaypalColor {
     r: number;
     g: number;
     b: number;
     hex: string;
 }
-export type WadPlayPalTypedEntry = WadPlayPalColor[];
-export type WadPlayPalTyped = WadPlayPalTypedEntry[];
+export type WadPlaypalTypedEntry = WadPlaypalColor[];
+export type WadPlaypalTyped = WadPlaypalTypedEntry[];
 
-export interface WadPlayPal {
-    rawPlaypal: WadPlayPalRaw;
-    typedPlaypal: WadPlayPalTyped;
+export interface WadPlaypal {
+    rawPlaypal: WadPlaypalRaw;
+    typedPlaypal: WadPlaypalTyped;
 }
 
-export const defaultPlaypal: Readonly<WadPlayPal> = {
+export const defaultPlaypal: Readonly<WadPlaypal> = {
     rawPlaypal: [],
     typedPlaypal: [],
 };
 
-export const preFilledPlayPal: Readonly<WadPlayPal> = {
+export const preFilledPlaypal: Readonly<WadPlaypal> = {
     rawPlaypal: [
         [
             0, 0, 0, 31, 23, 11, 23, 15, 7, 75, 75, 75, 255, 255, 255, 27, 27, 27, 19, 19, 19, 11, 11, 11, 7, 7, 7, 47,

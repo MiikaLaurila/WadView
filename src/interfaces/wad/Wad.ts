@@ -1,7 +1,7 @@
 import { type WadDirectory } from './WadDirectory';
 import { type WadHeader } from './WadHeader';
 import { type WadMapGroupList, type WadMapList } from './map/WadMap';
-import { type WadPlayPal } from './WadPlayPal';
+import { type WadPlaypal } from './WadPlayPal';
 import { type WadColorMap } from './WadColorMap';
 
 export interface Wad {
@@ -9,8 +9,8 @@ export interface Wad {
     directory: WadDirectory;
     mapGroups: WadMapGroupList;
     maps: WadMapList;
-    playPal: WadPlayPal;
-    colorMap: WadColorMap;
+    playpal: WadPlaypal;
+    colormap: WadColorMap;
 }
 
 export const defaultWad: Readonly<Partial<Wad>> = {
@@ -18,6 +18,6 @@ export const defaultWad: Readonly<Partial<Wad>> = {
     directory: undefined,
     mapGroups: undefined,
     maps: undefined,
-    playPal: undefined,
-    colorMap: undefined,
+    playpal: undefined,
+    colormap: undefined,
 };

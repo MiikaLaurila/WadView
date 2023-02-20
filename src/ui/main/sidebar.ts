@@ -2,7 +2,7 @@ import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
-import { WadPlayPal } from '../../interfaces/wad/WadPlayPal';
+import { WadPlaypal } from '../../interfaces/wad/WadPlayPal';
 import { switchContentModule } from './contentModule';
 
 
@@ -97,7 +97,7 @@ export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory
     }
 
     if (directory.length > 0) {
-        createChild(metaSection, 'DIRECTORY', () => { switchContentModule('notImplemented'); });
+        createChild(metaSection, 'DIRECTORY', () => { switchContentModule('directory'); });
     }
 
     if (mapGroups.length > 0) {
@@ -109,7 +109,7 @@ export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory
     });
 };
 
-export const initializeSideBarColors = (playpal: WadPlayPal, colormap: WadColorMap) => {
+export const initializeSideBarColors = (playpal: WadPlaypal, colormap: WadColorMap) => {
     const colorSection = document.getElementById('section-colors') as HTMLDivElement | undefined;
     if (!colorSection) {
         return;

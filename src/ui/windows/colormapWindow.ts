@@ -1,5 +1,5 @@
 import { getColormap, getPlaypal } from '../..';
-import { WadPlayPalTypedEntry } from '../../interfaces/wad/WadPlayPal';
+import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
 
@@ -21,7 +21,7 @@ export const initColormapWindowModule = () => {
     }
 };
 
-const createColormapEntry = (parent: HTMLDivElement, colormap: number[][], playpal: WadPlayPalTypedEntry) => {
+const createColormapEntry = (parent: HTMLDivElement, colormap: number[][], playpal: WadPlaypalTypedEntry) => {
     const colorBlockSize = 3;
     const container = document.createElement('div');
     container.style.margin = '20px';

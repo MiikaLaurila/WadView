@@ -7,7 +7,7 @@ import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
 import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
 import { isBlueDoor, isRedDoor, isYellowDoor, isExit, isTeleporter } from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
-import { WadPlayPalTypedEntry } from '../../interfaces/wad/WadPlayPal';
+import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
@@ -56,7 +56,7 @@ let maxWidth = (window.innerWidth - widthOffset) - canvasPadding * 2;
 let maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
 let renderFull = false;
 let mapData: WadMap = defaultWadMap;
-let playpal: WadPlayPalTypedEntry | null = null;
+let playpal: WadPlaypalTypedEntry | null = null;
 let bounds: WadMapBBox | null = null;
 let dim: Dimensions | null = null;
 let app: Application | null = null;
@@ -75,8 +75,8 @@ let otherThingCache: ThingCacheEntry[] | null = null;
 let monsterThingCache: ThingCacheEntry[] | null = null;
 
 window.addEventListener('resize', () => {
-    maxWidth = (window.innerWidth - 230) - canvasPadding * 2;
-    maxHeight = Math.min(1080, window.innerHeight - 180) - canvasPadding * 2;
+    maxWidth = (window.innerWidth - widthOffset) - canvasPadding * 2;
+    maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
     if (app && viewport && dim) {
         clearData();
         setBounds();
@@ -349,11 +349,10 @@ const transformMapXToCanvas = (x: number): number => {
 
 const reDrawMap = (lineWidth = 1) => {
     if (viewport) {
-        const oldGraphics = viewport.children[0] as Graphics;
+        const oldGraphics: Graphics | undefined = viewport.children[0] as Graphics;
         if (oldGraphics) {
             oldGraphics.clear();
             drawMap(oldGraphics, lineWidth);
-            viewport.addChild(oldGraphics);
         }
     }
 }
@@ -788,7 +787,6 @@ const refreshBottomAreaAndMap = (mapName: string) => {
         reDrawMap(lineWidth);
     }
 }
-
 
 const getToggleArea = (mapName: string) => {
     const toggleAreaParent = document.createElement('div');

@@ -1,10 +1,11 @@
 import { initColormapWindowModule } from '../windows/colormapWindow';
+import { initDirectoryWindowModule } from '../windows/directoryWindow';
 import { initLogWindowModule } from '../windows/logWindow';
 import { disposeMapWindowModule, initMapWindowModule } from '../windows/mapWindow';
 import { initNotReadyWindowModule } from '../windows/notreadyWindow';
 import { initPlaypalWindowModule } from '../windows/playpalWindow';
 
-export const contentModule = ['log', 'map', 'playpal', 'colormap', 'notImplemented'] as const;
+export const contentModule = ['log', 'map', 'playpal', 'colormap', 'notImplemented', 'directory'] as const;
 export type ContentModuleType = typeof contentModule[number];
 
 let selectedModule: ContentModuleType = 'log';
@@ -55,6 +56,9 @@ export const switchContentModule = (id: ContentModuleType, options?: ModuleOptio
             break;
         case 'notImplemented':
             initNotReadyWindowModule();
+            break;
+        case 'directory':
+            initDirectoryWindowModule();
             break;
         default:
             console.log('No implementation for', id);

@@ -15,8 +15,8 @@ export const isMapLump = (lumpName: unknown): lumpName is MapLump => {
     return mapLumps.includes(lumpName as MapLump);
 };
 
-export const playPalLumpName = 'PLAYPAL';
-export const colorMapLumpName = 'COLORMAP';
+export const playpalLumpName = 'PLAYPAL';
+export const colormapLumpName = 'COLORMAP';
 
 export const defaultSidebarWidth = 200;
 export const defaultTopbarHeight = 40;
