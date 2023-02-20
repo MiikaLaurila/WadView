@@ -1,11 +1,18 @@
 import { initColormapWindowModule } from '../windows/colormapWindow';
 import { initDirectoryWindowModule } from '../windows/directoryWindow';
+import { initEndoomWindowModule } from '../windows/endoomWindow';
+import { initHeaderWindowModule } from '../windows/headerWindow';
 import { initLogWindowModule } from '../windows/logWindow';
+import { initMapGroupWindowModule } from '../windows/mapGroupWindow';
 import { disposeMapWindowModule, initMapWindowModule } from '../windows/mapWindow';
 import { initNotReadyWindowModule } from '../windows/notreadyWindow';
 import { initPlaypalWindowModule } from '../windows/playpalWindow';
 
-export const contentModule = ['log', 'map', 'playpal', 'colormap', 'notImplemented', 'directory'] as const;
+export const contentModule = [
+    'log', 'map', 'playpal', 'colormap',
+    'notImplemented', 'directory', 'mapgroup',
+    'header', 'endoom',
+] as const;
 export type ContentModuleType = typeof contentModule[number];
 
 let selectedModule: ContentModuleType = 'log';
@@ -54,11 +61,20 @@ export const switchContentModule = (id: ContentModuleType, options?: ModuleOptio
                 initMapWindowModule(options.mapName);
             }
             break;
-        case 'notImplemented':
-            initNotReadyWindowModule();
-            break;
         case 'directory':
             initDirectoryWindowModule();
+            break;
+        case 'mapgroup':
+            initMapGroupWindowModule();
+            break;
+        case 'header':
+            initHeaderWindowModule();
+            break;
+        case 'endoom':
+            initEndoomWindowModule();
+            break;
+        case 'notImplemented':
+            initNotReadyWindowModule();
             break;
         default:
             console.log('No implementation for', id);

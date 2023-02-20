@@ -1,6 +1,7 @@
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
+import { WadEndoom } from '../../interfaces/wad/WadEndoom';
 import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
 import { WadPlaypal } from '../../interfaces/wad/WadPlayPal';
 import { switchContentModule } from './contentModule';
@@ -77,7 +78,7 @@ const createHead = (parent: HTMLDivElement, name: PageType) => {
     parent.appendChild(newChild);
 };
 
-export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory, mapGroups: WadMapGroupList) => {
+export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory, mapGroups: WadMapGroupList, endoom: WadEndoom) => {
     const metaSection = document.getElementById('section-meta') as HTMLDivElement | undefined;
     if (!metaSection) {
         return;
@@ -93,7 +94,7 @@ export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory
     createHead(metaSection, 'Metadata');
 
     if (header.type !== WadType.UNKNOWN) {
-        createChild(metaSection, 'HEADER', () => { switchContentModule('notImplemented'); });
+        createChild(metaSection, 'HEADER', () => { switchContentModule('header'); });
     }
 
     if (directory.length > 0) {
@@ -101,7 +102,11 @@ export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory
     }
 
     if (mapGroups.length > 0) {
-        createChild(metaSection, 'MAP GROUPS', () => { switchContentModule('notImplemented'); });
+        createChild(metaSection, 'MAP GROUPS', () => { switchContentModule('mapgroup'); });
+    }
+
+    if (endoom.length > 0) {
+        createChild(metaSection, 'ENDOOM', () => { switchContentModule('endoom'); });
     }
 
     createChild(metaSection, 'LOG', () => {

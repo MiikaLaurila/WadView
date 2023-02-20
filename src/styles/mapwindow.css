@@ -123,6 +123,7 @@
     font-size: 12px;
     font-family: 'Arial';
     padding-left: 2px;
+    z-index: 1001;
 }
 
 .map-hover-row {

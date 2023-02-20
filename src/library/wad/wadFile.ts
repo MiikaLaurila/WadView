@@ -1,11 +1,10 @@
 import { defaultWad, Wad } from '../../interfaces/wad/Wad';
-import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
+import { WadHeader } from '../../interfaces/wad/WadHeader';
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
-import { utf8ArrayToStr } from '../utilities/stringUtils';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { preFilledPlaypal, WadPlaypal, } from '../../interfaces/wad/WadPlayPal';
-import { colormapLumpName, playpalLumpName } from '../constants';
+import { colormapLumpName, endoomLumpName, playpalLumpName } from '../constants';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileMapParser, WadMapParsingOptions } from './wadFileMapParser';
 import { WadFilePlaypalParser } from './wadFilePlaypalParser';
@@ -13,6 +12,8 @@ import { WadFileColormapParser } from './wadFileColormapParser';
 import { WadFileMapGroupParser } from './wadFileMapGroupParser';
 import { WadFileDirectoryParser } from './wadFileDirectoryParser';
 import { WadFileHeaderParser } from './wadFileHeaderParser';
+import { WadEndoom } from '../../interfaces/wad/WadEndoom';
+import { WadFileEndoomParser } from './wadFileEndoomParser';
 
 interface LogMessage {
     evt: WadFileEvent;
@@ -287,7 +288,6 @@ export class WadFile {
         if (this._wadStruct.playpal !== undefined) {
             return this._wadStruct.playpal;
         }
-
         await this.sendEvent(WadFileEvent.PLAYPAL_PARSING, `Playpal parsing for ${this._fileUrl}`);
 
         const playPalLump = dir.find((e) => e.lumpName === playpalLumpName);
@@ -296,7 +296,7 @@ export class WadFile {
             return preFilledPlaypal;
         }
 
-        const playpalParser = new WadFilePlaypalParser({ lump: playPalLump, file: this.wadFile, sendEvent: this.sendEvent });
+        const playpalParser = new WadFilePlaypalParser({ lumps: [playPalLump], file: this.wadFile, sendEvent: this.sendEvent });
         const playpal = playpalParser.parsePlaypal();
 
         this.setPlaypal(playpal);
@@ -324,7 +324,7 @@ export class WadFile {
         }
         await this.sendEvent(WadFileEvent.COLORMAP_PARSING, `ColorMap parsing for ${this._fileUrl}`);
 
-        const colormapParser = new WadFileColormapParser({ lump: colormapLump, file: this.wadFile, sendEvent: this.sendEvent });
+        const colormapParser = new WadFileColormapParser({ lumps: [colormapLump], file: this.wadFile, sendEvent: this.sendEvent });
         const colormap = colormapParser.parseColormap();
 
         this.setColormap(colormap);
@@ -333,5 +333,32 @@ export class WadFile {
 
     private setColormap(colorMap: WadColorMap): void {
         this._wadStruct.colormap = colorMap;
+    }
+
+    public async endoom(): Promise<WadEndoom | null> {
+        const dir = await this.directory();
+
+        if (dir === null) {
+            return null;
+        }
+
+        if (this._wadStruct.endoom !== undefined) {
+            return this._wadStruct.endoom;
+        }
+
+        const endoomLump = dir.find((e) => e.lumpName === endoomLumpName);
+        if (endoomLump === undefined) {
+            return null;
+        }
+        await this.sendEvent(WadFileEvent.ENDOOM_PARSING, `Endoom parsing for ${this._fileUrl}`);
+        const endoomParser = new WadFileEndoomParser({ lumps: [endoomLump], file: this.wadFile, sendEvent: this.sendEvent });
+        const endoom = endoomParser.parseEndoom();
+
+        this.setEndoom(endoom);
+        return endoom;
+    }
+
+    private setEndoom(endoom: WadEndoom): void {
+        this._wadStruct.endoom = endoom;
     }
 }

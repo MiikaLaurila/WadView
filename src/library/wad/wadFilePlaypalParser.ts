@@ -1,22 +1,17 @@
-import { WadDirectoryEntry } from '../../interfaces/wad/WadDirectory';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 import { defaultPlaypal, WadPlaypal, WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
-
-interface WadPlaypalParserOptions extends WadParserOptions {
-    lump: WadDirectoryEntry;
-}
-
+import { playpalLumpName } from '../constants';
 export class WadFilePlaypalParser extends WadFileParser {
-    private lump: WadDirectoryEntry;
-    constructor(opts: WadPlaypalParserOptions) {
+    constructor(opts: WadParserOptions) {
         super(opts);
-        this.lump = opts.lump;
     }
 
     public parsePlaypal = (): WadPlaypal => {
         const playpal: WadPlaypal = JSON.parse(JSON.stringify(defaultPlaypal));
+        if (this.lumps.length === 0 || this.lumps[0].lumpName !== playpalLumpName) return playpal;
+
         const view = new Uint8Array(
-            this.file.slice(this.lump.lumpLocation, this.lump.lumpLocation + this.lump.lumpSize),
+            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
         );
         const paletteSize = 768;
         const paletteCount = 14;

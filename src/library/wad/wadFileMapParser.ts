@@ -9,7 +9,6 @@ import { WadMapSegment } from '../../interfaces/wad/map/WadMapSegment';
 import { WadMapSidedef } from '../../interfaces/wad/map/WadMapSidedef';
 import { WadMapSubSector } from '../../interfaces/wad/map/WadMapSubSector';
 import { WadMapThing, WadThing, WadThingDict, WadThingType, getWadMapThingGroup, extractWadMapThingFlags, SizeOfMapThing } from '../../interfaces/wad/map/WadMapThing';
-import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 import { utf8ArrayToStr } from '../utilities/stringUtils';
@@ -23,19 +22,16 @@ export interface WadMapParsingOptions {
 }
 
 interface WadMapParserOptions extends WadParserOptions, WadMapParsingOptions {
-    lumps: WadDirectory;
     mapName: string;
 }
 
 
 export class WadFileMapParser extends WadFileParser {
     private options: WadMapParserOptions;
-    private lumps: WadDirectory;
     private mapName: string;
     constructor(options: WadMapParserOptions) {
         super(options);
         this.options = options;
-        this.lumps = options.lumps;
         this.mapName = options.mapName;
     }
 

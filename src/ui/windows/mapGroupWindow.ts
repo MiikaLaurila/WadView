@@ -1,42 +1,23 @@
-import { getDirectory } from '../..';
-import { WadDirectory } from '../../interfaces/wad/WadDirectory';
+import { getMapGroups } from '../..';
+import { WadMapGroupList } from '../../interfaces/wad/map/WadMap';
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
 
-const containerId = 'dir-window-container';
-const rowHeight = 17;
-let directoryEntrySplitCount = Math.floor((window.innerHeight - 80) / rowHeight);
-window.addEventListener('resize', () => {
-    if (document.getElementById(containerId)) {
-        directoryEntrySplitCount = Math.floor((window.innerHeight - 80) / rowHeight);
-        initDirectoryWindowModule();
-    }
-});
+const containerId = 'mapgroup-window-container';
 
-let directory: WadDirectory = [];
-export const initDirectoryWindowModule = () => {
-    setTopBarPageName('Directory');
-    directory = getDirectory();
+let mapGroups: WadMapGroupList = [];
+export const initMapGroupWindowModule = () => {
+    setTopBarPageName('MapGroups');
+    mapGroups = getMapGroups();
 
-    const baseModule = createModule('directory');
+    const baseModule = createModule('mapgroup');
 
     const container = document.createElement('div');
     container.id = containerId;
     container.classList.add('dir-container');
     baseModule.appendChild(container);
 
-    const splitDirectory: WadDirectory[] = [];
-    let temp: WadDirectory = [];
-    directory.forEach((entry, idx) => {
-        temp.push(entry);
-        if ((idx + 1) % directoryEntrySplitCount === 0) {
-            splitDirectory.push(temp);
-            temp = [];
-        }
-    });
-    splitDirectory.push(temp);
-
-    splitDirectory.forEach((dir, dirIdx) => {
+    mapGroups.forEach((mapGroup) => {
         const splitContainer = document.createElement('div');
 
         const getCell = (text: string | number) => {
@@ -44,6 +25,12 @@ export const initDirectoryWindowModule = () => {
             cell.innerHTML = text.toString();
             return cell;
         }
+
+        const mapNameRow = document.createElement('div');
+        mapNameRow.style.fontWeight = 'bold';
+        mapNameRow.appendChild(getCell(mapGroup.name));
+        splitContainer.appendChild(mapNameRow);
+
         const headerRow = document.createElement('div');
         headerRow.style.fontWeight = 'bold';
         headerRow.appendChild(getCell('idx'));
@@ -52,9 +39,9 @@ export const initDirectoryWindowModule = () => {
         headerRow.appendChild(getCell('size'));
         splitContainer.appendChild(headerRow);
 
-        dir.forEach((entry, entryIdx) => {
+        mapGroup.lumps.forEach((entry, entryIdx) => {
             const row = document.createElement('div');
-            row.appendChild(getCell(dirIdx * directoryEntrySplitCount + entryIdx));
+            row.appendChild(getCell(entryIdx));
             row.appendChild(getCell(entry.lumpName));
             row.appendChild(getCell(entry.lumpLocation));
             row.appendChild(getCell(entry.lumpSize));

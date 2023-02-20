@@ -1,0 +1,18 @@
+#endoom-window-container {
+    width: 640px;
+    height: 400px;
+}
+
+#endoom-window-container>div {
+    display: inline-block;
+    position: relative;
+    margin-top: -2px;
+    height: 16px;
+    width: 8px;
+}
+
+#endoom-window-container>div>span {
+    position: absolute;
+    font-family: 'DOS';
+    font-size: 16px;
+}

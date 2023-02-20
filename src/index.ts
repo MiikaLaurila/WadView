@@ -1,3 +1,4 @@
+import './styles/styles';
 import { WadMapGroupList, WadMapList } from './interfaces/wad/map/WadMap';
 import { WadColorMap } from './interfaces/wad/WadColorMap';
 import { WadDirectory } from './interfaces/wad/WadDirectory';
@@ -9,7 +10,8 @@ import { initializeSideBarMeta, initializeSideBarColors, initializeSideBarMaps }
 import { setTopBarFileName } from './ui/main/topbar';
 import { initWadInput } from './ui/main/wadInput';
 import { addLogWindowMessage } from './ui/windows/logWindow';
-import './styles/styles';
+import { WadEndoom } from './interfaces/wad/WadEndoom';
+
 
 let header: WadHeader = defaultWadHeader;
 let directory: WadDirectory = [];
@@ -17,7 +19,18 @@ let mapGroups: WadMapGroupList = [];
 let maps: WadMapList = [];
 let playpal: WadPlaypal = defaultPlaypal;
 let colormap: WadColorMap = [];
+let endoom: WadEndoom = [];
 let niceFileName = '';
+
+const resetParsed = () => {
+    header = defaultWadHeader;
+    directory = [];
+    mapGroups = [];
+    maps = [];
+    playpal = defaultPlaypal;
+    colormap = [];
+    endoom = [];
+}
 
 export const getHeader = () => header;
 export const getDirectory = () => directory;
@@ -25,9 +38,12 @@ export const getMapGroups = () => mapGroups;
 export const getMaps = () => maps;
 export const getPlaypal = () => playpal;
 export const getColormap = () => colormap;
+export const getEndoom = () => endoom;
 export const getNiceFileName = () => niceFileName;
 
 const loadWholeWad = async () => {
+    resetParsed();
+
     const tempHeader = await wadFile.header();
     if (tempHeader) {
         header = tempHeader;
@@ -58,6 +74,11 @@ const loadWholeWad = async () => {
         colormap = tempColormap;
     }
 
+    const tempEndoom = await wadFile.endoom();
+    if (tempEndoom) {
+        endoom = tempEndoom;
+    }
+
     addLogWindowMessage(`${wadFile.fileUrl} loaded into memory`);
     onWadFileEvent(WadFileEvent.LOADING_READY);
     niceFileName = wadFile.niceFileName;
@@ -68,7 +89,7 @@ const onWadFileEvent = (evt: WadFileEvent) => {
     if (evt === WadFileEvent.FILE_LOADED) {
         void loadWholeWad();
     } else if (evt === WadFileEvent.LOADING_READY) {
-        initializeSideBarMeta(header, directory, mapGroups);
+        initializeSideBarMeta(header, directory, mapGroups, endoom);
         initializeSideBarColors(playpal, colormap);
         initializeSideBarMaps(maps);
     }

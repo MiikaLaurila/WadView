@@ -1,22 +1,18 @@
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
-import { WadDirectoryEntry } from '../../interfaces/wad/WadDirectory';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
+import { colormapLumpName } from '../constants';
 
-interface WadColormapParserOptions extends WadParserOptions {
-    lump: WadDirectoryEntry;
-}
 
 export class WadFileColormapParser extends WadFileParser {
-    private lump: WadDirectoryEntry;
-    constructor(opts: WadColormapParserOptions) {
+    constructor(opts: WadParserOptions) {
         super(opts);
-        this.lump = opts.lump;
     }
 
     public parseColormap = (): WadColorMap => {
+        if (this.lumps.length === 0 || this.lumps[0].lumpName !== colormapLumpName) return [];
         const colorMap = [];
         const view = new Uint8Array(
-            this.file.slice(this.lump.lumpLocation, this.lump.lumpLocation + this.lump.lumpSize),
+            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
         );
         const colorMapSize = 256;
         const colorMapCount = 34;
