@@ -93,15 +93,15 @@ export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory
     createHead(metaSection, 'Metadata');
 
     if (header.type !== WadType.UNKNOWN) {
-        createChild(metaSection, 'HEADER', () => { });
+        createChild(metaSection, 'HEADER', () => { switchContentModule('notImplemented'); });
     }
 
     if (directory.length > 0) {
-        createChild(metaSection, 'DIRECTORY', () => { });
+        createChild(metaSection, 'DIRECTORY', () => { switchContentModule('notImplemented'); });
     }
 
     if (mapGroups.length > 0) {
-        createChild(metaSection, 'MAP GROUPS', () => { });
+        createChild(metaSection, 'MAP GROUPS', () => { switchContentModule('notImplemented'); });
     }
 
     createChild(metaSection, 'LOG', () => {
