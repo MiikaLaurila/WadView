@@ -36,12 +36,17 @@ export const clearLogWindow = () => {
     }
 }
 
-export const addLogWindowMessage = (message: string, skipPush = false) => {
+export const addLogWindowMessage = (message: string, skipPush = false, resetLast = false) => {
     const logWindowMessages = document.getElementById(logWindowMessagesId) as HTMLDivElement | null;
     if (logWindowMessages) {
         const newMsg = document.createElement('p') as HTMLParagraphElement;
         newMsg.textContent = message;
-        logWindowMessages.appendChild(newMsg)
+        if (resetLast) {
+            const cArr = Array.from(logWindowMessages.children);
+            cArr[cArr.length - 1].parentElement?.removeChild(cArr[cArr.length - 1]);
+            logMessages.pop();
+        }
+        logWindowMessages.appendChild(newMsg);
         if (!skipPush) logMessages.push(message);
     }
 }

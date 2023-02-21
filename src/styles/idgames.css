@@ -1,0 +1,40 @@
+#idgames-window>p:first-of-type {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+#idgames-window-searchdiv {
+    width: 200px;
+    display: flex;
+    gap: 8px;
+}
+
+#idgames-window-results {
+    margin-top: 8px;
+}
+
+#idgames-window-results>div {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#idgames-window-results>div>div {
+    border: 1px solid black;
+    margin: 8px;
+    padding: 8px;
+}
+
+#idgames-window-results>div>div>p {
+    font-weight: bold;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+#idgames-window-results>div>div>p>span {
+    font-weight: normal;
+}
+#idgames-window-results>div>div>div>a {
+    display: block;
+    margin-bottom: 8px;
+}

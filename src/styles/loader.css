@@ -1,0 +1,76 @@
+.spinner-loader {
+    width: 40px;
+    height: 40px;
+    animation-name: spin;
+    animation-duration: 1500ms;
+    animation-direction: reverse;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    position: relative;
+    margin: 8px;
+}
+
+.spinner-loader>div {
+    width: 5px;
+    height: 5px;
+    background-color: black;
+    border-radius: 100vh;
+    position: absolute;
+}
+
+.spinner-loader>div:nth-child(1) {
+    left: 17px;
+    top: 2.5px;
+}
+
+.spinner-loader>div:nth-child(2) {
+    right: 7px;
+    top: 7px;
+    opacity: 0.875;
+}
+
+.spinner-loader>div:nth-child(3) {
+    right: 2.5px;
+    top: 17px;
+    opacity: 0.75;
+}
+
+.spinner-loader>div:nth-child(4) {
+    right: 7px;
+    bottom: 7px;
+    opacity: 0.625;
+}
+
+.spinner-loader>div:nth-child(5) {
+    left: 17px;
+    bottom: 2.5px;
+    opacity: 0.5;
+}
+
+.spinner-loader>div:nth-child(6) {
+    left: 7.5px;
+    bottom: 7px;
+    opacity: 0.375;
+}
+
+.spinner-loader>div:nth-child(7) {
+    left: 2.5px;
+    top: 17px;
+    opacity: 0.25;
+}
+
+.spinner-loader>div:nth-child(8) {
+    left: 7px;
+    top: 7px;
+    opacity: 0.125;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

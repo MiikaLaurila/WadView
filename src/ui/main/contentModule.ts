@@ -2,6 +2,7 @@ import { initColormapWindowModule } from '../windows/colormapWindow';
 import { initDirectoryWindowModule } from '../windows/directoryWindow';
 import { initEndoomWindowModule } from '../windows/endoomWindow';
 import { initHeaderWindowModule } from '../windows/headerWindow';
+import { initIdGamesBrowser } from '../windows/idgamesBrowser';
 import { initLogWindowModule } from '../windows/logWindow';
 import { initMapGroupWindowModule } from '../windows/mapGroupWindow';
 import { disposeMapWindowModule, initMapWindowModule } from '../windows/mapWindow';
@@ -11,7 +12,7 @@ import { initPlaypalWindowModule } from '../windows/playpalWindow';
 export const contentModule = [
     'log', 'map', 'playpal', 'colormap',
     'notImplemented', 'directory', 'mapgroup',
-    'header', 'endoom',
+    'header', 'endoom', 'idgames'
 ] as const;
 export type ContentModuleType = typeof contentModule[number];
 
@@ -72,6 +73,9 @@ export const switchContentModule = (id: ContentModuleType, options?: ModuleOptio
             break;
         case 'endoom':
             initEndoomWindowModule();
+            break;
+        case 'idgames':
+            initIdGamesBrowser();
             break;
         case 'notImplemented':
             initNotReadyWindowModule();
