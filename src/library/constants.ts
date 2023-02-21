@@ -22,4 +22,4 @@ export const endoomLumpName = 'ENDOOM';
 export const defaultSidebarWidth = 200;
 export const defaultTopbarHeight = 40;
 
-export const corsProxy = 'http://192.46.236.128:8080/';
+export const corsProxy = 'https://wadviewproxy.servegame.com/';
