@@ -1,4 +1,8 @@
-import { MapGroupDirectory, WadMapGroupList, isMapGroupDirectoryEntry } from '../../interfaces/wad/map/WadMap';
+import {
+    MapGroupDirectory,
+    WadMapGroupList,
+    isMapGroupDirectoryEntry
+} from '../../interfaces/wad/map/WadMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 

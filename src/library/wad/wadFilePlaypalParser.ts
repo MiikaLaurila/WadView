@@ -11,7 +11,10 @@ export class WadFilePlaypalParser extends WadFileParser {
         if (this.lumps.length === 0 || this.lumps[0].lumpName !== playpalLumpName) return playpal;
 
         const view = new Uint8Array(
-            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
+            this.file.slice(
+                this.lumps[0].lumpLocation,
+                this.lumps[0].lumpLocation + this.lumps[0].lumpSize
+            ),
         );
         const paletteSize = 768;
         const paletteCount = 14;

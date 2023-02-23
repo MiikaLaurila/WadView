@@ -147,7 +147,11 @@ export class WadFile {
         }
     }
 
-    public loadArrayBuffer(file: ArrayBuffer, fileName: string, callback?: (success: boolean, err?: string) => void): void {
+    public loadArrayBuffer(
+        file: ArrayBuffer,
+        fileName: string,
+        callback?: (success: boolean, err?: string) => void
+    ): void {
         this.wadLoadAttempted = true;
         this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
         this._fileUrl = fileName;
@@ -209,7 +213,11 @@ export class WadFile {
             return this._wadStruct.directory;
         }
         await this.sendEvent(WadFileEvent.DIRECTORY_PARSING, `Directory parsing for ${this._fileUrl}`);
-        const directoryParser = new WadFileDirectoryParser({ file: this.wadFile, sendEvent: this.sendEvent, header });
+        const directoryParser = new WadFileDirectoryParser({
+            file: this.wadFile,
+            sendEvent: this.sendEvent,
+            header
+        });
         const directory = directoryParser.parseDirectory();
         this.setDirectory(directory);
         return directory;
@@ -232,7 +240,11 @@ export class WadFile {
 
         await this.sendEvent(WadFileEvent.MAPGROUPS_PARSING, `MapGroups parsing for ${this._fileUrl}`);
 
-        const mapGroupParser = new WadFileMapGroupParser({ file: this.wadFile, sendEvent: this.sendEvent, directory: dir });
+        const mapGroupParser = new WadFileMapGroupParser({
+            file: this.wadFile,
+            sendEvent: this.sendEvent,
+            directory: dir
+        });
         const mapGroups = mapGroupParser.parseMapGroups();
 
         this.setMapGroups(mapGroups);
@@ -296,7 +308,11 @@ export class WadFile {
             return preFilledPlaypal;
         }
 
-        const playpalParser = new WadFilePlaypalParser({ lumps: [playPalLump], file: this.wadFile, sendEvent: this.sendEvent });
+        const playpalParser = new WadFilePlaypalParser({
+            lumps: [playPalLump],
+            file: this.wadFile,
+            sendEvent: this.sendEvent
+        });
         const playpal = playpalParser.parsePlaypal();
 
         this.setPlaypal(playpal);
@@ -324,7 +340,11 @@ export class WadFile {
         }
         await this.sendEvent(WadFileEvent.COLORMAP_PARSING, `ColorMap parsing for ${this._fileUrl}`);
 
-        const colormapParser = new WadFileColormapParser({ lumps: [colormapLump], file: this.wadFile, sendEvent: this.sendEvent });
+        const colormapParser = new WadFileColormapParser({
+            lumps: [colormapLump],
+            file: this.wadFile,
+            sendEvent: this.sendEvent
+        });
         const colormap = colormapParser.parseColormap();
 
         this.setColormap(colormap);
@@ -351,7 +371,11 @@ export class WadFile {
             return null;
         }
         await this.sendEvent(WadFileEvent.ENDOOM_PARSING, `Endoom parsing for ${this._fileUrl}`);
-        const endoomParser = new WadFileEndoomParser({ lumps: [endoomLump], file: this.wadFile, sendEvent: this.sendEvent });
+        const endoomParser = new WadFileEndoomParser({
+            lumps: [endoomLump],
+            file: this.wadFile,
+            sendEvent: this.sendEvent
+        });
         const endoom = endoomParser.parseEndoom();
 
         this.setEndoom(endoom);

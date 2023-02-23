@@ -56,13 +56,13 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
         }
     };
 
-    const wadSelectDoomElem: HTMLButtonElement | undefined = document.getElementById('wad-input-doom') as HTMLButtonElement;
+    const wadSelectDoomElem = document.getElementById('wad-input-doom') as HTMLButtonElement | null;
     if (wadSelectDoomElem) {
         wadSelectDoomElem.addEventListener('click', onSelectDoomElem);
     }
 
-    const wadOpenUrlButton: HTMLButtonElement | undefined = document.getElementById('wad-input-text-loader') as HTMLButtonElement;
-    const wadOpenUrlText: HTMLInputElement | undefined = document.getElementById('wad-input-text') as HTMLInputElement;
+    const wadOpenUrlButton = document.getElementById('wad-input-text-loader') as HTMLButtonElement | null;
+    const wadOpenUrlText = document.getElementById('wad-input-text') as HTMLInputElement | null;
 
     const onSelectOpenUrl = async () => {
         if (wadOpenUrlText) {
@@ -79,7 +79,7 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
         wadOpenUrlButton.addEventListener('click', onSelectOpenUrl);
     }
 
-    const wadBrowseIdgamesElem: HTMLButtonElement | undefined = document.getElementById('wad-input-idgames') as HTMLButtonElement;
+    const wadBrowseIdgamesElem = document.getElementById('wad-input-idgames') as HTMLButtonElement | null;
     if (wadBrowseIdgamesElem) {
         wadBrowseIdgamesElem.addEventListener('click', () => { switchContentModule('idgames'); });
     }

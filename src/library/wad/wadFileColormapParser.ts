@@ -12,7 +12,10 @@ export class WadFileColormapParser extends WadFileParser {
         if (this.lumps.length === 0 || this.lumps[0].lumpName !== colormapLumpName) return [];
         const colorMap = [];
         const view = new Uint8Array(
-            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
+            this.file.slice(
+                this.lumps[0].lumpLocation,
+                this.lumps[0].lumpLocation + this.lumps[0].lumpSize
+            ),
         );
         const colorMapSize = 256;
         const colorMapCount = 34;

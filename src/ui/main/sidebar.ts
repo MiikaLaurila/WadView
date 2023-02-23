@@ -78,7 +78,12 @@ const createHead = (parent: HTMLDivElement, name: PageType) => {
     parent.appendChild(newChild);
 };
 
-export const initializeSideBarMeta = (header: WadHeader, directory: WadDirectory, mapGroups: WadMapGroupList, endoom: WadEndoom) => {
+export const initializeSideBarMeta = (
+    header: WadHeader,
+    directory: WadDirectory,
+    mapGroups: WadMapGroupList,
+    endoom: WadEndoom
+) => {
     const metaSection = document.getElementById('section-meta') as HTMLDivElement | undefined;
     if (!metaSection) {
         return;

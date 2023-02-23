@@ -5,7 +5,13 @@ import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
 import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
-import { isBlueDoor, isRedDoor, isYellowDoor, isExit, isTeleporter } from '../../interfaces/wad/map/WadMapLinedef';
+import {
+    isBlueDoor,
+    isRedDoor,
+    isYellowDoor,
+    isExit,
+    isTeleporter
+} from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';

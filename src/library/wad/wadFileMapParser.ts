@@ -8,7 +8,15 @@ import { WadMapSector } from '../../interfaces/wad/map/WadMapSector';
 import { WadMapSegment } from '../../interfaces/wad/map/WadMapSegment';
 import { WadMapSidedef } from '../../interfaces/wad/map/WadMapSidedef';
 import { WadMapSubSector } from '../../interfaces/wad/map/WadMapSubSector';
-import { WadMapThing, WadThing, WadThingDict, WadThingType, getWadMapThingGroup, extractWadMapThingFlags, SizeOfMapThing } from '../../interfaces/wad/map/WadMapThing';
+import {
+    WadMapThing,
+    WadThing,
+    WadThingDict,
+    WadThingType,
+    getWadMapThingGroup,
+    extractWadMapThingFlags,
+    SizeOfMapThing
+} from '../../interfaces/wad/map/WadMapThing';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 import { utf8ArrayToStr } from '../utilities/stringUtils';
