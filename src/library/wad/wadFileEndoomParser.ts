@@ -14,7 +14,10 @@ export class WadFileEndoomParser extends WadFileParser {
         const endoomCharSize = 2;
         const charCount = this.lumps[0].lumpSize / endoomCharSize;
         const view = new Uint8Array(
-            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
+            this.file.slice(
+                this.lumps[0].lumpLocation,
+                this.lumps[0].lumpLocation + this.lumps[0].lumpSize
+            ),
         );
 
         const endoom: WadEndoom = [];
