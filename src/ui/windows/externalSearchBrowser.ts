@@ -70,8 +70,8 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
             const tableLink = linkBar.firstElementChild as HTMLLinkElement;
             return {
                 title: fileLink.innerText,
-                fileUrl: fileLink.href.replace(doc.URL, `${dsdaBaseUrl}/`),
-                dsdaUrl: tableLink.href.replace(doc.URL, `${dsdaBaseUrl}/`).replace('/table_view', ''),
+                fileUrl: fileLink.href.replace(window.location.origin, `${dsdaBaseUrl}/`),
+                dsdaUrl: tableLink.href.replace(window.location.origin, `${dsdaBaseUrl}/`).replace('/table_view', ''),
             }
         }
         return null;
@@ -91,7 +91,8 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
                 if (parsedObj) lastDsdaGameResult = [parsedObj];
             } else {
                 const linksToPages = Array.from(doc.getElementsByTagName('a'))
-                    .filter(a => a.href.includes('/wads/')).map(a => a.href.replace(doc.URL, '/'));
+                    .filter(a => a.href.includes('/wads/'))
+                    .map(a => a.href.replace(window.location.origin, '/'));
                 const promises = linksToPages.map((l) => fetch(corsProxy + dsdaBaseUrl + l)
                     .then(async (r) => parseWadPage(domParser.parseFromString(await r.text(), 'text/html'))));
                 const responses = await Promise.all(promises);

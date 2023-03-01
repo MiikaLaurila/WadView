@@ -77,6 +77,15 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
     }
     if (wadOpenUrlButton && wadOpenUrlText) {
         wadOpenUrlButton.addEventListener('click', onSelectOpenUrl);
+        const sParams = new URLSearchParams(window.location.search);
+        const fileParam = sParams.get('file');
+        if (fileParam) {
+            wadOpenUrlText.value = fileParam;
+            window.history.replaceState({}, '', window.location.origin);
+            setTimeout(() => {
+                addLogWindowMessage('URL contained a link to a wad/zip file. Click "Load URL" to try fetching ' + fileParam);
+            }, 100);
+        }
     }
 
     const wadBrowseIdgamesElem = document.getElementById('wad-input-idgames') as HTMLButtonElement | null;
@@ -91,7 +100,8 @@ export const loadWadUrl = async (url: string) => {
     clearLogWindow();
     switchContentModule('log');
     addLogWindowMessage(`Trying to load ${url}`);
-
+    const historyUrl = `${window.location.origin}?file=${encodeURIComponent(url)}`;
+    window.history.replaceState({}, '', historyUrl);
 
     if (url.toLowerCase().split(/(?=.zip)/g).pop()?.startsWith('.zip')) {
         try {
