@@ -11,4 +11,4 @@ import './directory.css';
 import './header.css';
 import './endoom.css';
 import './loader.css';
-import './idgames.css';
+import './exSearchBrowser.css';

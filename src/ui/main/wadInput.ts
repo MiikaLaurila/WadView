@@ -81,7 +81,7 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
 
     const wadBrowseIdgamesElem = document.getElementById('wad-input-idgames') as HTMLButtonElement | null;
     if (wadBrowseIdgamesElem) {
-        wadBrowseIdgamesElem.addEventListener('click', () => { switchContentModule('idgames'); });
+        wadBrowseIdgamesElem.addEventListener('click', () => { switchContentModule('exsearch'); });
     }
 
     return wadFile;
