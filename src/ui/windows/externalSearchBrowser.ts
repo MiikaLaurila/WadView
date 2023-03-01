@@ -106,8 +106,6 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
 
 const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLElement) => void) => {
     const container = document.createElement('div');
-    const containerParent = container.parentElement;
-    if (!containerParent) return;
     const head = document.createElement('p');
     head.innerText = `Search by title from ${host}`;
     container.appendChild(head);
@@ -132,8 +130,8 @@ const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLE
     }
     searchField.onkeydown = function (e) {
         const newVal = (e.target as HTMLInputElement).value.trim();
-        if (e.key === 'Enter' && newVal.length >= 3) {
-            onSearch(searchField.value.trim(), containerParent);
+        if (e.key === 'Enter' && newVal.length >= 3 && container.parentElement) {
+            onSearch(searchField.value.trim(), container.parentElement);
         }
     }
     searchDiv.appendChild(searchField);
@@ -142,7 +140,7 @@ const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLE
     searchButton.innerText = 'Search';
     searchButton.id = `${searchButtonId}-${host}`;
     searchButton.disabled = true;
-    searchButton.onclick = () => { onSearch(searchField.value.trim(), containerParent); }
+    searchButton.onclick = () => { container.parentElement && onSearch(searchField.value.trim(), container.parentElement); }
     searchDiv.appendChild(searchButton);
     container.appendChild(searchDiv);
     return container;
