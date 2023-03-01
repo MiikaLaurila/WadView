@@ -48,7 +48,7 @@ export const initExternalSearchBrowser = () => {
 const executeIdGamesSearch = (val: string, loadParent: HTMLElement) => {
     clearResults();
     const urlFormatted = encodeURIComponent(val);
-    loadParent.appendChild(getLoading(`idgames-loader`));
+    loadParent.appendChild(getLoading('idgames-loader'));
     fetch(corsProxy + idGamesApiUrl + `action=search&query=${urlFormatted}&type=title&sort=date&out=json`)
         .then(async (res) => {
             lastIdGamesResult = null;
@@ -56,7 +56,7 @@ const executeIdGamesSearch = (val: string, loadParent: HTMLElement) => {
             writeResults('idgames');
         })
         .finally(() => {
-            clearLoading(`idgames-loader`);
+            clearLoading('idgames-loader');
         });
 }
 
@@ -79,7 +79,7 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
 
     clearResults();
     const urlFormatted = encodeURIComponent(val);
-    loadParent.appendChild(getLoading(`dsda-loader`));
+    loadParent.appendChild(getLoading('dsda-loader'));
     fetch(corsProxy + dsdaBaseUrl + `/search?utf8=%E2%9C%93&search=${urlFormatted}&commit=Search`)
         .then(async (res) => {
             lastDsdaGameResult = null;
@@ -100,12 +100,14 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
             writeResults('dsda');
         })
         .finally(() => {
-            clearLoading(`dsda-loader`);
+            clearLoading('dsda-loader');
         });
 }
 
 const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLElement) => void) => {
     const container = document.createElement('div');
+    const containerParent = container.parentElement;
+    if (!containerParent) return;
     const head = document.createElement('p');
     head.innerText = `Search by title from ${host}`;
     container.appendChild(head);
@@ -131,7 +133,7 @@ const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLE
     searchField.onkeydown = function (e) {
         const newVal = (e.target as HTMLInputElement).value.trim();
         if (e.key === 'Enter' && newVal.length >= 3) {
-            onSearch(searchField.value.trim(), container.parentElement!);
+            onSearch(searchField.value.trim(), containerParent);
         }
     }
     searchDiv.appendChild(searchField);
@@ -140,7 +142,7 @@ const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLE
     searchButton.innerText = 'Search';
     searchButton.id = `${searchButtonId}-${host}`;
     searchButton.disabled = true;
-    searchButton.onclick = () => { onSearch(searchField.value.trim(), container.parentElement!); }
+    searchButton.onclick = () => { onSearch(searchField.value.trim(), containerParent); }
     searchDiv.appendChild(searchButton);
     container.appendChild(searchDiv);
     return container;
