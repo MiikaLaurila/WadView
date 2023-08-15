@@ -8,11 +8,12 @@ import { initMapGroupWindowModule } from '../windows/mapGroupWindow';
 import { disposeMapWindowModule, initMapWindowModule } from '../windows/mapWindow';
 import { initNotReadyWindowModule } from '../windows/notreadyWindow';
 import { initPlaypalWindowModule } from '../windows/playpalWindow';
+import { initDehackedWindowModule } from '../windows/dehackedWindow';
 
 export const contentModule = [
     'log', 'map', 'playpal', 'colormap',
     'notImplemented', 'directory', 'mapgroup',
-    'header', 'endoom', 'exsearch'
+    'header', 'endoom', 'exsearch', 'dehacked'
 ] as const;
 export type ContentModuleType = typeof contentModule[number];
 
@@ -76,6 +77,9 @@ export const switchContentModule = (id: ContentModuleType, options?: ModuleOptio
             break;
         case 'exsearch':
             initExternalSearchBrowser();
+            break;
+        case 'dehacked':
+            initDehackedWindowModule();
             break;
         case 'notImplemented':
             initNotReadyWindowModule();

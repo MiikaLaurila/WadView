@@ -1,5 +1,6 @@
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
+import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadEndoom } from '../../interfaces/wad/WadEndoom';
 import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
@@ -82,7 +83,8 @@ export const initializeSideBarMeta = (
     header: WadHeader,
     directory: WadDirectory,
     mapGroups: WadMapGroupList,
-    endoom: WadEndoom
+    endoom: WadEndoom,
+    dehacked: WadDehacked | null,
 ) => {
     const metaSection = document.getElementById('section-meta') as HTMLDivElement | undefined;
     if (!metaSection) {
@@ -112,6 +114,10 @@ export const initializeSideBarMeta = (
 
     if (endoom.length > 0) {
         createChild(metaSection, 'ENDOOM', () => { switchContentModule('endoom'); });
+    }
+
+    if (dehacked) {
+        createChild(metaSection, 'DEHACKED', () => { switchContentModule('dehacked'); });
     }
 
     createChild(metaSection, 'LOG', () => {

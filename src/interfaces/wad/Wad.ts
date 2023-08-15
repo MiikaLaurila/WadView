@@ -5,6 +5,7 @@ import { type WadPlaypal } from './WadPlayPal';
 import { type WadColorMap } from './WadColorMap';
 import { WadEndoom } from './WadEndoom';
 import { WadTextures } from './texture/WadTextures';
+import { WadDehacked } from './WadDehacked';
 
 export interface Wad {
     header: WadHeader;
@@ -16,6 +17,7 @@ export interface Wad {
     playpal: WadPlaypal;
     colormap: WadColorMap;
     endoom: WadEndoom;
+    dehacked: WadDehacked | null;
 }
 
 export const defaultWad: Readonly<Partial<Wad>> = {
@@ -27,4 +29,5 @@ export const defaultWad: Readonly<Partial<Wad>> = {
     colormap: undefined,
     endoom: undefined,
     textures: undefined,
+    dehacked: undefined
 };

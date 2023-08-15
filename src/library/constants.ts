@@ -18,6 +18,7 @@ export const isMapLump = (lumpName: unknown): lumpName is MapLump => {
 export const playpalLumpName = 'PLAYPAL';
 export const colormapLumpName = 'COLORMAP';
 export const endoomLumpName = 'ENDOOM';
+export const dehackedLumpName = 'DEHACKED';
 
 export const defaultSidebarWidth = 200;
 export const defaultTopbarHeight = 40;

@@ -12,3 +12,4 @@ import './header.css';
 import './endoom.css';
 import './loader.css';
 import './exSearchBrowser.css';
+import './dehacked.css';

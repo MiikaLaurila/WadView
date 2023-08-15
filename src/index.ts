@@ -11,6 +11,7 @@ import { setTopBarFileName } from './ui/main/topbar';
 import { initWadInput } from './ui/main/wadInput';
 import { addLogWindowMessage } from './ui/windows/logWindow';
 import { WadEndoom } from './interfaces/wad/WadEndoom';
+import { WadDehacked } from './interfaces/wad/WadDehacked';
 
 
 let header: WadHeader = defaultWadHeader;
@@ -20,6 +21,7 @@ let maps: WadMapList = [];
 let playpal: WadPlaypal = defaultPlaypal;
 let colormap: WadColorMap = [];
 let endoom: WadEndoom = [];
+let dehacked: WadDehacked | null = null;
 let niceFileName = '';
 
 const resetParsed = () => {
@@ -39,6 +41,7 @@ export const getMaps = () => maps;
 export const getPlaypal = () => playpal;
 export const getColormap = () => colormap;
 export const getEndoom = () => endoom;
+export const getDehacked = () => dehacked;
 export const getNiceFileName = () => niceFileName;
 
 const loadWholeWad = async () => {
@@ -79,6 +82,11 @@ const loadWholeWad = async () => {
         endoom = tempEndoom;
     }
 
+    const tempDehacked = await wadFile.dehacked();
+    if (tempDehacked) {
+        dehacked = tempDehacked;
+    }
+
     addLogWindowMessage(`${wadFile.fileUrl} loaded into memory`);
     onWadFileEvent(WadFileEvent.LOADING_READY);
     niceFileName = wadFile.niceFileName;
@@ -89,7 +97,7 @@ const onWadFileEvent = (evt: WadFileEvent) => {
     if (evt === WadFileEvent.FILE_LOADED) {
         void loadWholeWad();
     } else if (evt === WadFileEvent.LOADING_READY) {
-        initializeSideBarMeta(header, directory, mapGroups, endoom);
+        initializeSideBarMeta(header, directory, mapGroups, endoom, dehacked);
         initializeSideBarColors(playpal, colormap);
         initializeSideBarMaps(maps);
     }

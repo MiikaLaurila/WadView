@@ -1,0 +1,5 @@
+#dehacked-window-textarea {
+    font-family: 'Courier New', Courier, monospace;
+    width: 600px;
+    height: calc(100vh - 55px);
+}

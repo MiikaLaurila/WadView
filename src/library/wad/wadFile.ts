@@ -4,7 +4,7 @@ import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { preFilledPlaypal, WadPlaypal, } from '../../interfaces/wad/WadPlayPal';
-import { colormapLumpName, endoomLumpName, playpalLumpName } from '../constants';
+import { colormapLumpName, dehackedLumpName, endoomLumpName, playpalLumpName } from '../constants';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileMapParser, WadMapParsingOptions } from './wadFileMapParser';
 import { WadFilePlaypalParser } from './wadFilePlaypalParser';
@@ -14,6 +14,8 @@ import { WadFileDirectoryParser } from './wadFileDirectoryParser';
 import { WadFileHeaderParser } from './wadFileHeaderParser';
 import { WadEndoom } from '../../interfaces/wad/WadEndoom';
 import { WadFileEndoomParser } from './wadFileEndoomParser';
+import { WadFileDehackedParser } from './wadFileDehackedParser';
+import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 
 interface LogMessage {
     evt: WadFileEvent;
@@ -384,5 +386,36 @@ export class WadFile {
 
     private setEndoom(endoom: WadEndoom): void {
         this._wadStruct.endoom = endoom;
+    }
+
+    public async dehacked(): Promise<WadDehacked | null> {
+        const dir = await this.directory();
+
+        if (dir === null) {
+            return null;
+        }
+
+        if (this._wadStruct.dehacked !== undefined) {
+            return this._wadStruct.dehacked;
+        }
+
+        const dehackedLump = dir.find((e) => e.lumpName === dehackedLumpName);
+        if (dehackedLump === undefined) {
+            return null;
+        }
+        await this.sendEvent(WadFileEvent.DEHACKED_PARSING, `Dehacked parsing for ${this._fileUrl}`);
+        const dehackedParser = new WadFileDehackedParser({
+            lumps: [dehackedLump],
+            file: this.wadFile,
+            sendEvent: this.sendEvent
+        });
+        const dehacked = dehackedParser.parseDehacked();
+
+        this.setDehacked(dehacked);
+        return dehacked;
+    }
+
+    private setDehacked(dehacked: WadDehacked | null): void {
+        this._wadStruct.dehacked = dehacked;
     }
 }

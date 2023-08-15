@@ -1,6 +1,6 @@
 import { Viewport } from 'pixi-viewport';
 import { Application, Graphics, utils } from 'pixi.js';
-import { getMaps, getNiceFileName, getPlaypal } from '../..';
+import { getDehacked, getMaps, getNiceFileName, getPlaypal } from '../..';
 import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
@@ -13,6 +13,7 @@ import {
     isTeleporter
 } from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
+import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';
 import { createModule } from '../main/contentModule';
@@ -63,6 +64,7 @@ let maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPaddin
 let renderFull = false;
 let mapData: WadMap = defaultWadMap;
 let playpal: WadPlaypalTypedEntry | null = null;
+let dehacked: WadDehacked | null = null;
 let bounds: WadMapBBox | null = null;
 let dim: Dimensions | null = null;
 let app: Application | null = null;
@@ -74,6 +76,7 @@ let showDifficulty = 0;
 let hideDifficulty = 0;
 let showBlockmap = false;
 let showGrid = false;
+let automapMode = false;
 let debounceZoomEvts = false;
 let maxResImage = 5192;
 let lineCache: Record<string, LineCacheEntry[]> | null = null;
@@ -106,6 +109,7 @@ export const initMapWindowModule = (mapName: string) => {
     if (foundMap) {
         mapData = foundMap;
         playpal = getPlaypal().typedPlaypal[0];
+        dehacked = getDehacked();
     }
 
     disposeMapWindowModule();
@@ -167,7 +171,7 @@ const onCanvasMouseMove = (event: MouseEvent) => {
         const halfSize = size / 2;
         return (Math.abs(a.x - b.x) <= halfSize && Math.abs(a.y - b.y) <= halfSize);
     };
-    const things = mapData.things
+    const things = applyDehacked(mapData.things)
         .filter(t => thingIsRenderable(t))
         .filter(t => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size * 2));
     if (things.length > 0) {
@@ -391,6 +395,7 @@ const drawLines = (graphy: Graphics) => {
                 else return -1;
             })
             .forEach((line) => {
+                if (automapMode && line.flagsString.includes('HIDE_ON_MAP')) return;
                 const vStart = transformMapPointToCanvas({ ...mapData.vertices[line.start] });
                 const vEnd = transformMapPointToCanvas({ ...mapData.vertices[line.end] });
 
@@ -400,7 +405,8 @@ const drawLines = (graphy: Graphics) => {
                 const fSectorFloor = frontSector.floorHeight;
                 const fSectorCeil = frontSector.ceilingHeight;
                 const isSecretSector = frontSector.specialType === 9;
-                const isHiddenSecret = line.flagsString.includes('SECRET');
+                // const isHiddenSecret = line.flagsString.includes('SECRET');
+                const isHiddenSecret = false;
                 const isTwoSided = line.backSideDef !== 65535;
                 if (isBlueDoor(line.specialType)) {
                     color = ppal[200].hex;
@@ -485,6 +491,21 @@ const getDotSize = (size: number): number => {
     return size * dim.scale;
 };
 
+const applyDehacked = (things: WadMapThing[]): WadMapThing[] => {
+    if (!dehacked) return things;
+
+    return things.map((thing) => {
+        if (!dehacked) return thing;
+        const dehackedThing = dehacked.things.find(dt => dt.from === thing.thingType);
+        if (!dehackedThing) return thing;
+        const modifiedThing = { ...thing };
+        //@ts-ignore
+        modifiedThing.thingTypeString = dehackedThing.to.name;
+        modifiedThing.thingGroup = dehackedThing.to.type;
+        return modifiedThing;
+    });
+}
+
 const drawThings = (graphy: Graphics) => {
     if (otherThingCache && monsterThingCache) {
         otherThingCache.forEach((thing) => {
@@ -510,7 +531,7 @@ const drawThings = (graphy: Graphics) => {
 
     }
     else {
-        mapData.things
+        applyDehacked(mapData.things)
             .filter(t => thingIsRenderable(t))
             .sort((a, b) => b.size - a.size)
             .sort((a, b) => {
@@ -958,6 +979,10 @@ const getToggleArea = (mapName: string) => {
     flagAreaContainer.appendChild(generateDifficultyButton('hide'));
     flagAreaContainer.appendChild(generateBoolButton('Blockmap', () => showBlockmap = !showBlockmap, showBlockmap));
     flagAreaContainer.appendChild(generateBoolButton('Grid', () => showGrid = !showGrid, showGrid));
+    flagAreaContainer.appendChild(generateBoolButton('Automap', () => {
+        lineCache = null;
+        automapMode = !automapMode
+    }, automapMode));
 
 
     return toggleAreaParent;

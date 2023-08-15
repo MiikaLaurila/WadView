@@ -360,7 +360,7 @@ export class WadFileMapParser extends WadFileParser {
     }
 
     public parseMap = async () => {
-        const map: WadMap = { ...defaultWadMap };
+        const map: WadMap = JSON.parse(JSON.stringify(defaultWadMap));
         map.name = this.mapName;
         const thingLump = this.lumps.find((lump) => lump.lumpName === 'THINGS');
         if (thingLump !== undefined) {
