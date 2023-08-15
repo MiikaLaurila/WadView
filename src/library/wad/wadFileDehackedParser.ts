@@ -71,7 +71,7 @@ export class WadFileDehackedParser extends WadFileParser {
         }
 
         if (dehackedThingType && dehackedThingName && dehackedThingGroup) {
-            return { from: dehackedThingType, to: { name: dehackedThingName, type: dehackedThingGroup } }
+            return { from: dehackedThingType, to: { name: dehackedThingName, group: dehackedThingGroup } }
         }
         return null;
     }

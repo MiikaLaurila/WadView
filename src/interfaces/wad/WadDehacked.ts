@@ -2,7 +2,7 @@ import { WadMapThingGroup, WadThing } from './map/WadMapThing';
 
 export interface WadDehackedThingInfo {
     name: string;
-    type: WadMapThingGroup;
+    group: WadMapThingGroup;
 }
 
 export interface WadDehackedThing {

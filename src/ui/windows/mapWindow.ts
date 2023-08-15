@@ -500,7 +500,7 @@ const applyDehacked = (things: WadMapThing[]): WadMapThingDehacked[] => {
         if (!dehackedThing) return thing;
         const modifiedThing: WadMapThingDehacked = { ...thing };
         modifiedThing.thingTypeString = dehackedThing.to.name;
-        modifiedThing.thingGroup = dehackedThing.to.type;
+        modifiedThing.thingGroup = dehackedThing.to.group;
         return modifiedThing;
     });
 }
