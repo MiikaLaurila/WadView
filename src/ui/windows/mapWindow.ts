@@ -12,7 +12,7 @@ import {
     isExit,
     isTeleporter
 } from '../../interfaces/wad/map/WadMapLinedef';
-import { WadMapThing, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
+import { WadMapThing, WadMapThingDehacked, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';
@@ -45,7 +45,7 @@ interface ThingCacheEntry {
 interface HoverData {
     x: number;
     y: number;
-    things: WadMapThing[];
+    things: WadMapThingDehacked[];
 }
 
 const mapWindowId = 'map-window';
@@ -445,7 +445,7 @@ const drawLines = (graphy: Graphics) => {
     }
 }
 
-const thingIsRenderable = (t: WadMapThing): boolean => {
+const thingIsRenderable = (t: WadMapThingDehacked): boolean => {
     if (!enabledThingGroups.includes(t.thingGroup as WadMapThingGroup)) return false;
     if (showMultiPlayer === 1 && t.flagsString.includes('NET_ONLY')) return false;
     if (showMultiPlayer === 2 && !t.flagsString.includes('NET_ONLY')) return false;
@@ -491,15 +491,14 @@ const getDotSize = (size: number): number => {
     return size * dim.scale;
 };
 
-const applyDehacked = (things: WadMapThing[]): WadMapThing[] => {
+const applyDehacked = (things: WadMapThing[]): WadMapThingDehacked[] => {
     if (!dehacked) return things;
 
     return things.map((thing) => {
         if (!dehacked) return thing;
         const dehackedThing = dehacked.things.find(dt => dt.from === thing.thingType);
         if (!dehackedThing) return thing;
-        const modifiedThing = { ...thing };
-        //@ts-ignore
+        const modifiedThing: WadMapThingDehacked = { ...thing };
         modifiedThing.thingTypeString = dehackedThing.to.name;
         modifiedThing.thingGroup = dehackedThing.to.type;
         return modifiedThing;

@@ -20,7 +20,7 @@ export class WadFileDehackedParser extends WadFileParser {
             ),
         );
 
-        let dehacked: WadDehacked = JSON.parse(JSON.stringify(defaultWadDehacked));
+        const dehacked: WadDehacked = JSON.parse(JSON.stringify(defaultWadDehacked));
 
         for (let i = 0; i < charCount; i++) {
             const viewStart = i * dehackedCharSize;

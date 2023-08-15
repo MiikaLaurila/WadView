@@ -1,4 +1,4 @@
-import { WadMapThingGroup, WadThing } from "./map/WadMapThing";
+import { WadMapThingGroup, WadThing } from './map/WadMapThing';
 
 export interface WadDehackedThingInfo {
     name: string;

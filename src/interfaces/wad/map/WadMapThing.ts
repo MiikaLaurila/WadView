@@ -420,6 +420,18 @@ export interface WadMapThing {
     size: number;
 }
 
+export interface WadMapThingDehacked {
+    x: number;
+    y: number;
+    angle: number;
+    thingType: WadThing;
+    thingTypeString: string;
+    thingGroup: WadMapThingGroup;
+    flags: number;
+    flagsString: WadMapThingFlagType[];
+    size: number;
+}
+
 type WadMapThingSizeDict = Record<WadThingType, number>;
 
 export const SizeOfMapThing: WadMapThingSizeDict = {
