@@ -18,7 +18,7 @@ export const utf8ArrayToStr = (function () {
         result.length = 0;
 
         // eslint-disable-next-line space-in-parens
-        for (let i = 0; i < buffLen;) {
+        for (let i = 0; i < buffLen; ) {
             byte1 = array[i++];
 
             if (byte1 <= 0x7f) {
@@ -42,6 +42,7 @@ export const utf8ArrayToStr = (function () {
     };
 })();
 
+//prettier-ignore
 export const cp347toUtf8 = [
     '␀', '␁', '␂', '␃', '␄', '␅', '␆', '␇', '␈', '␉', '␊',
     '␋', '␌', '␍', '␎', '␏', '␐', '␑', '␒', '␓', '␔', '␕',

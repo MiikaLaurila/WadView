@@ -23,4 +23,4 @@ export const initDehackedWindowModule = () => {
     textBox.value = dehacked.dehackedString;
     textBox.readOnly = true;
     container.appendChild(textBox);
-}
+};

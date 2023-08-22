@@ -15,7 +15,7 @@ import {
     WadThingType,
     getWadMapThingGroup,
     extractWadMapThingFlags,
-    SizeOfMapThing
+    SizeOfMapThing,
 } from '../../interfaces/wad/map/WadMapThing';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
@@ -32,7 +32,6 @@ export interface WadMapParsingOptions {
 interface WadMapParserOptions extends WadParserOptions, WadMapParsingOptions {
     mapName: string;
 }
-
 
 export class WadFileMapParser extends WadFileParser {
     private options: WadMapParserOptions;
@@ -364,63 +363,42 @@ export class WadFileMapParser extends WadFileParser {
         map.name = this.mapName;
         const thingLump = this.lumps.find((lump) => lump.lumpName === 'THINGS');
         if (thingLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_THINGS_PARSING,
-                `Things parsed for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_THINGS_PARSING, `Things parsed for ${this.mapName}`);
             map.things = this.getMapThings(thingLump.lumpLocation, thingLump.lumpSize);
         }
 
         const linedefLump = this.lumps.find((lump) => lump.lumpName === 'LINEDEFS');
         if (linedefLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_LININGEFS_PARSING,
-                `Linedefs parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_LININGEFS_PARSING, `Linedefs parsing for ${this.mapName}`);
             map.linedefs = this.getMapLinedefs(linedefLump.lumpLocation, linedefLump.lumpSize);
         }
 
         const sidedefLump = this.lumps.find((lump) => lump.lumpName === 'SIDEDEFS');
         if (sidedefLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_SIDINGEFS_PARSING,
-                `Sidedefs parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_SIDINGEFS_PARSING, `Sidedefs parsing for ${this.mapName}`);
             map.sidedefs = this.getMapSidedefs(sidedefLump.lumpLocation, sidedefLump.lumpSize);
         }
 
         const verticesLump = this.lumps.find((lump) => lump.lumpName === 'VERTEXES');
         if (verticesLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_VERTICES_PARSING,
-                `Vertices parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_VERTICES_PARSING, `Vertices parsing for ${this.mapName}`);
             map.vertices = this.getMapVertices(verticesLump.lumpLocation, verticesLump.lumpSize);
         }
 
         if (this.options.parseSegments) {
             const segmentsLump = this.lumps.find((lump) => lump.lumpName === 'SEGS');
             if (segmentsLump !== undefined) {
-                await this.sendEvent(
-                    WadFileEvent.MAP_SEGMENTS_PARSING,
-                    `Segments parsing for ${this.mapName}`,
-                );
+                await this.sendEvent(WadFileEvent.MAP_SEGMENTS_PARSING, `Segments parsing for ${this.mapName}`);
                 map.segments = this.getMapSegments(segmentsLump.lumpLocation, segmentsLump.lumpSize);
             }
         } else {
-            await this.sendEvent(
-                WadFileEvent.MAP_SKIPPING_SEGMENTS,
-                `SKIPPING Segments parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_SKIPPING_SEGMENTS, `SKIPPING Segments parsing for ${this.mapName}`);
         }
 
         if (this.options.parseSubSectors) {
             const subSectorsLump = this.lumps.find((lump) => lump.lumpName === 'SSECTORS');
             if (subSectorsLump !== undefined) {
-                await this.sendEvent(
-                    WadFileEvent.MAP_SUBSECTORS_PARSING,
-                    `SubSectors parsing for ${this.mapName}`,
-                );
+                await this.sendEvent(WadFileEvent.MAP_SUBSECTORS_PARSING, `SubSectors parsing for ${this.mapName}`);
                 map.subSectors = this.getMapSubSectors(subSectorsLump.lumpLocation, subSectorsLump.lumpSize);
             }
         } else {
@@ -433,35 +411,23 @@ export class WadFileMapParser extends WadFileParser {
         if (this.options.parseNodes) {
             const nodesLump = this.lumps.find((lump) => lump.lumpName === 'NODES');
             if (nodesLump !== undefined) {
-                await this.sendEvent(
-                    WadFileEvent.MAP_NODES_PARSING,
-                    `Nodes parsing for ${this.mapName}`,
-                );
+                await this.sendEvent(WadFileEvent.MAP_NODES_PARSING, `Nodes parsing for ${this.mapName}`);
                 map.nodes = this.getMapNodes(nodesLump.lumpLocation, nodesLump.lumpSize);
             }
         } else {
-            await this.sendEvent(
-                WadFileEvent.MAP_SKIPPING_NODES,
-                `SKIPPING Nodes parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_SKIPPING_NODES, `SKIPPING Nodes parsing for ${this.mapName}`);
         }
 
         const sectorLump = this.lumps.find((lump) => lump.lumpName === 'SECTORS');
         if (sectorLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_SECTORS_PARSING,
-                `Sectors parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_SECTORS_PARSING, `Sectors parsing for ${this.mapName}`);
             map.sectors = this.getMapSectors(sectorLump.lumpLocation, sectorLump.lumpSize);
         }
 
         if (this.options.parseRejects) {
             const rejectLump = this.lumps.find((lump) => lump.lumpName === 'REJECT');
             if (rejectLump !== undefined) {
-                await this.sendEvent(
-                    WadFileEvent.MAP_REJECT_TABLE_PARSING,
-                    `RejectTable parsing for ${this.mapName}`,
-                );
+                await this.sendEvent(WadFileEvent.MAP_REJECT_TABLE_PARSING, `RejectTable parsing for ${this.mapName}`);
                 map.rejectTable = this.getMapRejectTable(
                     rejectLump.lumpLocation,
                     rejectLump.lumpSize,
@@ -477,10 +443,7 @@ export class WadFileMapParser extends WadFileParser {
 
         const blockmapLump = this.lumps.find((lump) => lump.lumpName === 'BLOCKMAP');
         if (blockmapLump !== undefined) {
-            await this.sendEvent(
-                WadFileEvent.MAP_BLOCKMAP_PARSING,
-                `BlockMap parsing for ${this.mapName}`,
-            );
+            await this.sendEvent(WadFileEvent.MAP_BLOCKMAP_PARSING, `BlockMap parsing for ${this.mapName}`);
             if (!this.options.parseBlockmap) {
                 await this.sendEvent(
                     WadFileEvent.MAP_SKIPPING_BLOCKLIST,
@@ -491,5 +454,5 @@ export class WadFileMapParser extends WadFileParser {
         }
 
         return map;
-    }
+    };
 }

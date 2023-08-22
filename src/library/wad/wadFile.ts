@@ -3,7 +3,7 @@ import { WadHeader } from '../../interfaces/wad/WadHeader';
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
-import { preFilledPlaypal, WadPlaypal, } from '../../interfaces/wad/WadPlayPal';
+import { preFilledPlaypal, WadPlaypal } from '../../interfaces/wad/WadPlayPal';
 import { colormapLumpName, dehackedLumpName, endoomLumpName, playpalLumpName } from '../constants';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileMapParser, WadMapParsingOptions } from './wadFileMapParser';
@@ -27,7 +27,7 @@ interface WadFileOptions {
     eventListener?: (evt: WadFileEvent, msg?: string) => void;
     readyCb?: (success: boolean, err?: string) => void;
     breatheInLog?: boolean;
-    mapOpts?: WadMapParsingOptions
+    mapOpts?: WadMapParsingOptions;
 }
 export class WadFile {
     private _fileUrl = '';
@@ -152,7 +152,7 @@ export class WadFile {
     public loadArrayBuffer(
         file: ArrayBuffer,
         fileName: string,
-        callback?: (success: boolean, err?: string) => void
+        callback?: (success: boolean, err?: string) => void,
     ): void {
         this.wadLoadAttempted = true;
         this._wadStruct = JSON.parse(JSON.stringify(defaultWad));
@@ -218,7 +218,7 @@ export class WadFile {
         const directoryParser = new WadFileDirectoryParser({
             file: this.wadFile,
             sendEvent: this.sendEvent,
-            header
+            header,
         });
         const directory = directoryParser.parseDirectory();
         this.setDirectory(directory);
@@ -245,7 +245,7 @@ export class WadFile {
         const mapGroupParser = new WadFileMapGroupParser({
             file: this.wadFile,
             sendEvent: this.sendEvent,
-            directory: dir
+            directory: dir,
         });
         const mapGroups = mapGroupParser.parseMapGroups();
 
@@ -278,7 +278,7 @@ export class WadFile {
                 lumps: mapGroup.lumps,
                 mapName: mapGroup.name,
                 file: this.wadFile,
-                sendEvent: this.sendEvent
+                sendEvent: this.sendEvent,
             });
             const map = await mapParser.parseMap();
             maps.push(map);
@@ -313,7 +313,7 @@ export class WadFile {
         const playpalParser = new WadFilePlaypalParser({
             lumps: [playPalLump],
             file: this.wadFile,
-            sendEvent: this.sendEvent
+            sendEvent: this.sendEvent,
         });
         const playpal = playpalParser.parsePlaypal();
 
@@ -345,7 +345,7 @@ export class WadFile {
         const colormapParser = new WadFileColormapParser({
             lumps: [colormapLump],
             file: this.wadFile,
-            sendEvent: this.sendEvent
+            sendEvent: this.sendEvent,
         });
         const colormap = colormapParser.parseColormap();
 
@@ -376,7 +376,7 @@ export class WadFile {
         const endoomParser = new WadFileEndoomParser({
             lumps: [endoomLump],
             file: this.wadFile,
-            sendEvent: this.sendEvent
+            sendEvent: this.sendEvent,
         });
         const endoom = endoomParser.parseEndoom();
 
@@ -407,7 +407,7 @@ export class WadFile {
         const dehackedParser = new WadFileDehackedParser({
             lumps: [dehackedLump],
             file: this.wadFile,
-            sendEvent: this.sendEvent
+            sendEvent: this.sendEvent,
         });
         const dehacked = dehackedParser.parseDehacked();
 

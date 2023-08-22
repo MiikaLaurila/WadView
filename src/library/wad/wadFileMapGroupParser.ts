@@ -1,8 +1,4 @@
-import {
-    MapGroupDirectory,
-    WadMapGroupList,
-    isMapGroupDirectoryEntry
-} from '../../interfaces/wad/map/WadMap';
+import { MapGroupDirectory, WadMapGroupList, isMapGroupDirectoryEntry } from '../../interfaces/wad/map/WadMap';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 
@@ -27,7 +23,7 @@ export class WadFileMapGroupParser extends WadFileParser {
             if (isValid && !currentMapName) {
                 currentMapName = arr[idx - 1].lumpName;
                 foundLumps.push(entry);
-            } else if ((isValid && idx !== arr.length - 1) && currentMapName) {
+            } else if (isValid && idx !== arr.length - 1 && currentMapName) {
                 foundLumps.push(entry);
             } else if ((!isValid || idx === arr.length - 1) && currentMapName) {
                 mapGroups.push({ name: currentMapName, lumps: foundLumps });
@@ -37,5 +33,5 @@ export class WadFileMapGroupParser extends WadFileParser {
         });
         mapGroups = mapGroups.sort((a, b) => a.name.localeCompare(b.name));
         return mapGroups;
-    }
+    };
 }

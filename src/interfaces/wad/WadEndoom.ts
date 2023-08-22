@@ -17,12 +17,12 @@ export const ANSIColors = [
     '#ffffff',
 ] as const;
 
-type ANSIColor = typeof ANSIColors[number];
+type ANSIColor = (typeof ANSIColors)[number];
 
 export type WadEndoomChar = {
     char: string;
     backgroundColor: ANSIColor;
     foregroundColor: ANSIColor;
     blink: boolean;
-}
+};
 export type WadEndoom = WadEndoomChar[];

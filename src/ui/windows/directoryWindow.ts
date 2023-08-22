@@ -43,7 +43,7 @@ export const initDirectoryWindowModule = () => {
             const cell = document.createElement('div');
             cell.innerHTML = text.toString();
             return cell;
-        }
+        };
         const headerRow = document.createElement('div');
         headerRow.style.fontWeight = 'bold';
         headerRow.appendChild(getCell('idx'));
@@ -62,4 +62,4 @@ export const initDirectoryWindowModule = () => {
         });
         container.appendChild(splitContainer);
     });
-}
+};

@@ -3,7 +3,7 @@
     height: 400px;
 }
 
-#endoom-window-container>div {
+#endoom-window-container > div {
     display: inline-block;
     position: relative;
     margin-top: -2px;
@@ -11,7 +11,7 @@
     width: 8px;
 }
 
-#endoom-window-container>div>span {
+#endoom-window-container > div > span {
     position: absolute;
     font-family: 'DOS';
     font-size: 16px;

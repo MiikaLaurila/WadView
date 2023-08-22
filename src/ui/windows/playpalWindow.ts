@@ -3,7 +3,6 @@ import { WadPlaypalTypedEntry, WadPlaypalColor } from '../../interfaces/wad/WadP
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
 
-
 const playpalWindowId = 'playpal-window';
 
 export const initPlaypalWindowModule = () => {
@@ -14,7 +13,7 @@ export const initPlaypalWindowModule = () => {
     setTopBarPageName('PlayPal');
     const playPal = getPlaypal();
     if (playPal) {
-        playPal.typedPlaypal.forEach(e => {
+        playPal.typedPlaypal.forEach((e) => {
             createPlayPalEntry(playpalWindow, e);
         });
     }
@@ -43,7 +42,7 @@ const createPlayPalEntry = (parent: HTMLDivElement, pal: WadPlaypalTypedEntry) =
             colorBlockSize,
         );
     });
-    canvasEl.onmousemove = e => {
+    canvasEl.onmousemove = (e) => {
         const rect = canvasEl.getBoundingClientRect();
         const xPos = e.clientX - rect.left;
         const yPos = e.clientY - rect.top;

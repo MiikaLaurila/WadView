@@ -5,13 +5,13 @@
     font-family: Arial;
 }
 
-#map-window-button-container>div {
+#map-window-button-container > div {
     margin-top: 8px;
     margin-left: 8px;
     position: relative;
 }
 
-#map-window-button-container>div:first-of-type {
+#map-window-button-container > div:first-of-type {
     display: flex;
     gap: 8px;
     height: 25px;
@@ -19,11 +19,11 @@
     user-select: none;
 }
 
-#map-window-button-container>div:last-of-type>div {
+#map-window-button-container > div:last-of-type > div {
     margin-bottom: 8px;
 }
 
-#map-window-button-container>div:last-of-type>div:first-of-type:hover::after {
+#map-window-button-container > div:last-of-type > div:nth-of-type(1):hover::after {
     display: block;
     position: absolute;
     font-size: 10px;
@@ -33,11 +33,11 @@
     border: 1px solid black;
     top: -55px;
     left: 150px;
-    content: "Values over 5192 can cause issues with some browsers. Firefox should work upto 10000.";
+    content: 'Values over 5192 can cause issues with some browsers. Firefox should work upto 10000.';
     margin-bottom: 8px;
 }
 
-#map-window-button-container>div:last-of-type>div:last-of-type:hover::after {
+#map-window-button-container > div:last-of-type > div:nth-of-type(2):hover::after {
     display: block;
     position: absolute;
     font-size: 10px;
@@ -47,18 +47,32 @@
     border: 1px solid black;
     top: -10px;
     left: 150px;
-    content: "Wait 500ms after last zoom to re-render. Helps with huge maps.";
+    content: 'Wait 500ms after last zoom to re-render. Helps with huge maps.';
     margin-bottom: 8px;
 }
 
-#map-window-button-container>div:last-of-type>div>label {
+#map-window-button-container > div:last-of-type > div:nth-of-type(3):hover::after {
+    display: block;
+    position: absolute;
+    font-size: 10px;
+    width: 180px;
+    padding: 8px;
+    background-color: white;
+    border: 1px solid black;
+    top: 10px;
+    left: 150px;
+    content: 'Select which map palette you want to render the map with.';
+    margin-bottom: 8px;
+}
+
+#map-window-button-container > div:last-of-type > div > label {
     font-size: 12px;
     width: 150px;
     display: inline-block;
     user-select: none;
 }
 
-#map-window-button-container>div>label {
+#map-window-button-container > div > label {
     font-size: 12px;
 }
 
@@ -69,7 +83,7 @@
     font-family: 'Roboto Mono';
 }
 
-#map-window-toggle-area>p {
+#map-window-toggle-area > p {
     color: white;
     text-align: center;
     width: 100%;
@@ -78,7 +92,7 @@
     font-size: 12px;
 }
 
-#map-window-toggle-area>div {
+#map-window-toggle-area > div {
     display: flex;
     height: 40px;
     width: 100%;
@@ -88,24 +102,24 @@
     margin-top: 4px;
 }
 
-#map-window-toggle-area>div:hover {
+#map-window-toggle-area > div:hover {
     cursor: pointer;
 }
 
-#map-window-toggle-area>div>div {
+#map-window-toggle-area > div > div {
     display: block;
     height: 40px;
     width: 50px;
 }
 
-#map-window-toggle-area>div>div>div {
+#map-window-toggle-area > div > div > div {
     height: 20px;
     width: 20px;
     margin-left: auto;
     margin-right: auto;
 }
 
-#map-window-toggle-area>div>div>p {
+#map-window-toggle-area > div > div > p {
     color: white;
     font-size: 9px;
     width: 100%;

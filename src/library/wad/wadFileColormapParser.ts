@@ -2,7 +2,6 @@ import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 import { colormapLumpName } from '../constants';
 
-
 export class WadFileColormapParser extends WadFileParser {
     constructor(opts: WadParserOptions) {
         super(opts);
@@ -12,10 +11,7 @@ export class WadFileColormapParser extends WadFileParser {
         if (this.lumps.length === 0 || this.lumps[0].lumpName !== colormapLumpName) return [];
         const colorMap = [];
         const view = new Uint8Array(
-            this.file.slice(
-                this.lumps[0].lumpLocation,
-                this.lumps[0].lumpLocation + this.lumps[0].lumpSize
-            ),
+            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
         );
         const colorMapSize = 256;
         const colorMapCount = 34;
@@ -28,5 +24,5 @@ export class WadFileColormapParser extends WadFileParser {
             colorMap.push(colorMapArr);
         }
         return colorMap;
-    }
+    };
 }

@@ -13,7 +13,6 @@ import { addLogWindowMessage } from './ui/windows/logWindow';
 import { WadEndoom } from './interfaces/wad/WadEndoom';
 import { WadDehacked } from './interfaces/wad/WadDehacked';
 
-
 let header: WadHeader = defaultWadHeader;
 let directory: WadDirectory = [];
 let mapGroups: WadMapGroupList = [];
@@ -32,7 +31,7 @@ const resetParsed = () => {
     playpal = defaultPlaypal;
     colormap = [];
     endoom = [];
-}
+};
 
 export const getHeader = () => header;
 export const getDirectory = () => directory;

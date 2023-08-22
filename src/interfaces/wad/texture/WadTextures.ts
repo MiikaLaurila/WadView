@@ -20,5 +20,4 @@ export interface WadTextures {
     patchNames: [];
     texture1: WadTexture[];
     texture2: WadTexture[];
-
 }

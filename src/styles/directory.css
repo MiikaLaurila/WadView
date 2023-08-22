@@ -2,12 +2,12 @@
     display: flex;
     flex-wrap: wrap;
 }
-.dir-container>div {
+.dir-container > div {
     width: 350px;
     border: 1px solid black;
     margin: 8px;
 }
-.dir-container>div>div {
+.dir-container > div > div {
     display: flex;
     flex-wrap: nowrap;
     padding-left: 2px;
@@ -16,19 +16,19 @@
     padding-bottom: 1px;
 }
 
-.dir-container>div>div:last-of-type {
+.dir-container > div > div:last-of-type {
     border-bottom: none;
 }
 
-.dir-container>div>div>div:nth-of-type(1) {
+.dir-container > div > div > div:nth-of-type(1) {
     width: 50px;
 }
-.dir-container>div>div>div:nth-of-type(2) {
+.dir-container > div > div > div:nth-of-type(2) {
     width: 100px;
 }
-.dir-container>div>div>div:nth-of-type(3) {
+.dir-container > div > div > div:nth-of-type(3) {
     width: 100px;
 }
-.dir-container>div>div>div:nth-of-type(4) {
+.dir-container > div > div > div:nth-of-type(4) {
     width: 100px;
 }

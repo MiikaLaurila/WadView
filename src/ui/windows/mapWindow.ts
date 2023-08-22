@@ -1,23 +1,17 @@
 import { Viewport } from 'pixi-viewport';
 import { Application, Graphics, utils } from 'pixi.js';
-import { getDehacked, getMaps, getNiceFileName, getPlaypal } from '../..';
+import { getDehacked, getMaps, getNiceFileName } from '../..';
 import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
 import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
-import {
-    isBlueDoor,
-    isRedDoor,
-    isYellowDoor,
-    isExit,
-    isTeleporter
-} from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapThing, WadMapThingDehacked, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadDehacked } from '../../interfaces/wad/WadDehacked';
-import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { getThingColor } from '../../library/utilities/thingUtils';
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
+import { MapWindowPalette, mapPalettes } from '../../interfaces/wad/map/MapWindowPalettes';
+import { WadMapLinedef } from '../../interfaces/wad/map/WadMapLinedef';
 
 interface Dimensions {
     height: number;
@@ -55,15 +49,15 @@ const toggleAreaId = 'map-window-toggle-area';
 const buttonContainerId = 'map-window-button-container';
 const debounceCheckId = 'map-window-button-debounce-check';
 const maxResId = 'map-window-input-maxres';
+const paletteOptionId = 'map-window-input-palette';
 const canvasPadding = 10;
 const widthOffset = 216;
 const heightOffset = 190;
 
-let maxWidth = (window.innerWidth - widthOffset) - canvasPadding * 2;
+let maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
 let maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
 let renderFull = false;
 let mapData: WadMap = defaultWadMap;
-let playpal: WadPlaypalTypedEntry | null = null;
 let dehacked: WadDehacked | null = null;
 let bounds: WadMapBBox | null = null;
 let dim: Dimensions | null = null;
@@ -82,25 +76,26 @@ let maxResImage = 5192;
 let lineCache: Record<string, LineCacheEntry[]> | null = null;
 let otherThingCache: ThingCacheEntry[] | null = null;
 let monsterThingCache: ThingCacheEntry[] | null = null;
+let selectedPalette: MapWindowPalette = mapPalettes[0];
 
 window.addEventListener('resize', () => {
-    maxWidth = (window.innerWidth - widthOffset) - canvasPadding * 2;
+    maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
     maxHeight = Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
     if (app && viewport && dim) {
         clearData();
         setBounds();
-        setDimensions()
+        setDimensions();
         app.renderer.resize(dim.width + canvasPadding * 2, dim.height + canvasPadding * 2);
         reDrawMap();
     }
-})
+});
 
 export const disposeMapWindowModule = () => {
     if (app) {
         app.destroy(true, true);
         app = null;
     }
-}
+};
 
 export const initMapWindowModule = (mapName: string) => {
     clearData();
@@ -108,7 +103,6 @@ export const initMapWindowModule = (mapName: string) => {
     const foundMap = getMaps().find((m) => m.name === mapName);
     if (foundMap) {
         mapData = foundMap;
-        playpal = getPlaypal().typedPlaypal[0];
         dehacked = getDehacked();
     }
 
@@ -128,7 +122,7 @@ export const initMapWindowModule = (mapName: string) => {
     mapWindow.appendChild(getBottomArea(mapName));
 
     initializeMap();
-}
+};
 
 const clearData = () => {
     bounds = null;
@@ -136,14 +130,14 @@ const clearData = () => {
     otherThingCache = null;
     monsterThingCache = null;
     lineCache = null;
-}
+};
 
 const onCanvasMouseMove = (event: MouseEvent) => {
-    const canvasRef = (event.currentTarget as HTMLCanvasElement);
+    const canvasRef = event.currentTarget as HTMLCanvasElement;
     if (!viewport || !bounds || !dim || !canvasRef) return;
     const diffPoints = (p1: Point, p2: Point): Point => {
         return { x: p1.x - p2.x, y: p1.y - p2.y };
-    }
+    };
     const viewportMousePos = { x: event.pageX, y: event.pageY };
     const topLeftCanvasPos = {
         x: canvasRef.offsetLeft + 208,
@@ -169,21 +163,21 @@ const onCanvasMouseMove = (event: MouseEvent) => {
 
     const isInsideBoundingBox = (a: Point, b: Point, size: number): boolean => {
         const halfSize = size / 2;
-        return (Math.abs(a.x - b.x) <= halfSize && Math.abs(a.y - b.y) <= halfSize);
+        return Math.abs(a.x - b.x) <= halfSize && Math.abs(a.y - b.y) <= halfSize;
     };
     const things = applyDehacked(mapData.things)
-        .filter(t => thingIsRenderable(t))
-        .filter(t => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size * 2));
+        .filter((t) => thingIsRenderable(t))
+        .filter((t) => isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size * 2));
     if (things.length > 0) {
         drawHover({ x: viewportMousePos.x, y: viewportMousePos.y, things });
     } else if (hoverDivs.length > 0) {
         clearHover();
     }
-}
+};
 
 const setBounds = (): void => {
     if (mapData.vertices.length === 0) {
-        console.error('Can\'t set bounds of map because there are no vertices');
+        console.error("Can't set bounds of map because there are no vertices");
         return;
     }
 
@@ -203,7 +197,7 @@ const setBounds = (): void => {
 
 const setDimensions = (): void => {
     if (!bounds) {
-        console.error('Can\'t set dimensions of map because there are no map bounds set');
+        console.error("Can't set dimensions of map because there are no map bounds set");
         return;
     }
 
@@ -216,13 +210,11 @@ const setDimensions = (): void => {
         if (mapWidth < maxResImage && mapHeight < maxResImage) {
             maxW = mapWidth;
             maxH = mapHeight;
-        }
-        else if (mapWidth >= mapHeight) {
+        } else if (mapWidth >= mapHeight) {
             const ratio = mapWidth / mapHeight;
             maxW = maxResImage;
             maxH = maxResImage / ratio;
-        }
-        else {
+        } else {
             const ratio = mapHeight / mapWidth;
             maxW = maxResImage / ratio;
             maxH = maxResImage;
@@ -262,17 +254,17 @@ const initializeMap = () => {
     if (!bounds) setBounds();
     if (!dim) setDimensions();
     if (!bounds || !dim) {
-        console.error('Can\'t initialize map because dimensions or bounds are missing');
+        console.error("Can't initialize map because dimensions or bounds are missing");
         return;
     }
 
     app = new Application({
         view: document.getElementById(mapWindowCanvasId) as HTMLCanvasElement,
-        backgroundColor: 0x000000,
+        backgroundColor: utils.string2hex(selectedPalette.getBackground(selectedPalette)),
         width: dim.width + canvasPadding * 2,
         height: dim.height + canvasPadding * 2,
         antialias: !renderFull,
-        preserveDrawingBuffer: true
+        preserveDrawingBuffer: true,
     });
 
     if (viewport) {
@@ -284,7 +276,7 @@ const initializeMap = () => {
         screenHeight: dim.height + canvasPadding * 2,
         worldWidth: dim.width + canvasPadding * 2,
         worldHeight: dim.height + canvasPadding * 2,
-        interaction: app.renderer.plugins.interaction
+        interaction: app.renderer.plugins.interaction,
     });
 
     app.stage.addChild(viewport);
@@ -294,7 +286,7 @@ const initializeMap = () => {
     drawMap(graphy, renderFull ? 3 : 1);
     viewport.addChild(graphy);
     if (renderFull) {
-        viewport.fitWorld()
+        viewport.fitWorld();
     }
 
     const debounceTime = 500;
@@ -310,15 +302,14 @@ const initializeMap = () => {
                     reDrawMap(lineWidth);
                 }
             }, debounceTime);
-        }
-        else {
+        } else {
             if (viewport) {
                 const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
                 reDrawMap(lineWidth);
             }
         }
     });
-}
+};
 
 const transformMapPointToCanvas = (p: Point): Point => {
     if (!bounds || !dim) return p;
@@ -365,7 +356,7 @@ const reDrawMap = (lineWidth = 1) => {
             drawMap(oldGraphics, lineWidth);
         }
     }
-}
+};
 
 const drawMap = (graphy: Graphics, lineWidth = 1) => {
     graphy.lineStyle({ width: lineWidth });
@@ -373,11 +364,32 @@ const drawMap = (graphy: Graphics, lineWidth = 1) => {
     drawThings(graphy);
     if (showBlockmap) drawBlockmap(graphy);
     if (showGrid) drawGrid(graphy);
-}
+};
+
+const shouldBeDrawnOnAutomap = (line: WadMapLinedef) => {
+    const frontSide = { ...mapData.sidedefs[line.frontSideDef] };
+    const frontSector = { ...mapData.sectors[frontSide.sector] };
+    const fSectorFloor = frontSector.floorHeight;
+    const fSectorCeil = frontSector.ceilingHeight;
+    const backSide = { ...mapData.sidedefs[line.backSideDef] };
+    const backSector = { ...mapData.sectors[backSide.sector] };
+    const bSectorFloor = backSector.floorHeight;
+    const bSectorCeil = backSector.ceilingHeight;
+    if (
+        line.flagsString.includes('TWO_SIDED') &&
+        !line.flagsString.includes('SECRET') &&
+        frontSector.specialType !== 9 &&
+        backSector.specialType !== 9 &&
+        fSectorCeil === bSectorCeil &&
+        fSectorFloor === bSectorFloor
+    )
+        return false;
+    if (line.flagsString.includes('HIDE_ON_MAP')) return false;
+    return true;
+};
 
 const drawLines = (graphy: Graphics) => {
-    if (!app || !playpal) return;
-    const ppal = playpal;
+    if (!app) return;
     if (lineCache && Object.keys(lineCache).length > 0) {
         Object.keys(lineCache).forEach((key: string) => {
             lineCache?.[key].forEach((line) => {
@@ -395,46 +407,11 @@ const drawLines = (graphy: Graphics) => {
                 else return -1;
             })
             .forEach((line) => {
-                if (automapMode && line.flagsString.includes('HIDE_ON_MAP')) return;
+                if (automapMode && !shouldBeDrawnOnAutomap(line)) return;
+
                 const vStart = transformMapPointToCanvas({ ...mapData.vertices[line.start] });
                 const vEnd = transformMapPointToCanvas({ ...mapData.vertices[line.end] });
-
-                let color = 'cyan';
-                const frontSide = { ...mapData.sidedefs[line.frontSideDef] };
-                const frontSector = { ...mapData.sectors[frontSide.sector] };
-                const fSectorFloor = frontSector.floorHeight;
-                const fSectorCeil = frontSector.ceilingHeight;
-                const isSecretSector = frontSector.specialType === 9;
-                // const isHiddenSecret = line.flagsString.includes('SECRET');
-                const isHiddenSecret = false;
-                const isTwoSided = line.backSideDef !== 65535;
-                if (isBlueDoor(line.specialType)) {
-                    color = ppal[200].hex;
-                } else if (isRedDoor(line.specialType)) {
-                    color = ppal[176].hex;
-                } else if (isYellowDoor(line.specialType)) {
-                    color = ppal[231].hex;
-                } else if (isExit(line.specialType)) {
-                    color = ppal[112].hex;
-                } else if (isTeleporter(line.specialType)) {
-                    color = ppal[121].hex;
-                } else if (isTwoSided && !isHiddenSecret) {
-                    const backSide = { ...mapData.sidedefs[line.backSideDef] };
-                    const backSector = { ...mapData.sectors[backSide.sector] };
-                    const bSectorFloor = backSector.floorHeight;
-                    const bSectorCeil = backSector.ceilingHeight;
-                    if (fSectorFloor !== bSectorFloor) {
-                        color = ppal[55].hex;
-                    } else if (fSectorCeil !== bSectorCeil) {
-                        color = ppal[215].hex;
-                    } else if (fSectorCeil === bSectorCeil && fSectorFloor === bSectorFloor) {
-                        color = ppal[100].hex;
-                    }
-                } else if (isSecretSector && !isHiddenSecret) {
-                    color = ppal[252].hex;
-                } else {
-                    color = ppal[180].hex;
-                }
+                const color = selectedPalette.getLineColor(selectedPalette, line, mapData);
 
                 graphy.lineStyle({ color: utils.string2hex(color), width: graphy.line.width });
                 graphy.drawPolygon([vStart, vEnd]);
@@ -443,7 +420,7 @@ const drawLines = (graphy: Graphics) => {
                 lineCache[color].push({ vStart, vEnd, color });
             });
     }
-}
+};
 
 const thingIsRenderable = (t: WadMapThingDehacked): boolean => {
     if (!enabledThingGroups.includes(t.thingGroup as WadMapThingGroup)) return false;
@@ -465,8 +442,8 @@ const drawTriangle = (
     size: number,
     rotation: number,
 ): [Point, Point, Point] => {
-    const rot = (-rotation * Math.PI / 180) + Math.PI / 2;
-    const height = Math.sin(90 * Math.PI / 180) * size;
+    const rot = (-rotation * Math.PI) / 180 + Math.PI / 2;
+    const height = Math.sin((90 * Math.PI) / 180) * size;
     const width = size;
 
     const v1 = {
@@ -496,14 +473,14 @@ const applyDehacked = (things: WadMapThing[]): WadMapThingDehacked[] => {
 
     return things.map((thing) => {
         if (!dehacked) return thing;
-        const dehackedThing = dehacked.things.find(dt => dt.from === thing.thingType);
+        const dehackedThing = dehacked.things.find((dt) => dt.from === thing.thingType);
         if (!dehackedThing) return thing;
         const modifiedThing: WadMapThingDehacked = { ...thing };
         modifiedThing.thingTypeString = dehackedThing.to.name;
         modifiedThing.thingGroup = dehackedThing.to.group;
         return modifiedThing;
     });
-}
+};
 
 const drawThings = (graphy: Graphics) => {
     if (otherThingCache && monsterThingCache) {
@@ -517,7 +494,6 @@ const drawThings = (graphy: Graphics) => {
             graphy.drawRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
             graphy.endFill();
             graphy.lineStyle({ width: ogLineW });
-
         });
 
         monsterThingCache.forEach((thing) => {
@@ -527,17 +503,12 @@ const drawThings = (graphy: Graphics) => {
                 graphy.drawPolygon(points[0], points[1], points[2]);
             }
         });
-
-    }
-    else {
+    } else {
         applyDehacked(mapData.things)
-            .filter(t => thingIsRenderable(t))
+            .filter((t) => thingIsRenderable(t))
             .sort((a, b) => b.size - a.size)
             .sort((a, b) => {
-                if (
-                    a.thingGroup === WadMapThingGroup.MONSTER
-                    && b.thingGroup !== WadMapThingGroup.MONSTER
-                ) {
+                if (a.thingGroup === WadMapThingGroup.MONSTER && b.thingGroup !== WadMapThingGroup.MONSTER) {
                     return 1;
                 } else {
                     return -1;
@@ -554,7 +525,7 @@ const drawThings = (graphy: Graphics) => {
                 if (!otherThingCache) otherThingCache = [];
                 if (!isMonster) {
                     const ogLineW = graphy.line.width;
-                    graphy.lineStyle({ color: utils.string2hex(color), alignment: 1, width: graphy.line.width * 0 })
+                    graphy.lineStyle({ color: utils.string2hex(color), alignment: 1, width: graphy.line.width * 0 });
                     graphy.beginFill(utils.string2hex(color));
                     graphy.drawRect(x - dotSize / 2, y - dotSize / 2, dotSize, dotSize);
                     graphy.endFill();
@@ -563,15 +534,20 @@ const drawThings = (graphy: Graphics) => {
                 } else {
                     graphy.lineStyle({ color: utils.string2hex(color), alignment: 1, width: graphy.line.width });
                     const trianglePoints = drawTriangle(graphy, x, y, dotSize, thing.angle);
-                    monsterThingCache.push({ pos: { x, y }, color, isDot: isMonster, trianglePoints, size: thing.size });
+                    monsterThingCache.push({
+                        pos: { x, y },
+                        color,
+                        isDot: isMonster,
+                        trianglePoints,
+                        size: thing.size,
+                    });
                 }
             });
     }
-
-}
+};
 
 const drawBlockmap = (graphy: Graphics): void => {
-    if (!app || !playpal || !bounds) return;
+    if (!app || !bounds) return;
     const blockMap = JSON.parse(JSON.stringify(mapData.blockMap)) as WadMapBlockMap;
     const gridSize = 128;
     if (blockMap.xOrigin === undefined) {
@@ -580,10 +556,9 @@ const drawBlockmap = (graphy: Graphics): void => {
         blockMap.columns = Math.abs((blockMap.xOrigin - bounds.right) / gridSize);
         blockMap.rows = Math.abs((blockMap.yOrigin - bounds.bottom) / gridSize);
     }
-    const ppal = playpal;
     const colCount = blockMap.columns;
     const rowCount = blockMap.rows;
-    const gridColor = ppal[107].hex;
+    const gridColor = selectedPalette.getBlockmapColor(selectedPalette);
     const x0Orig = blockMap.xOrigin;
     const y0Orig = blockMap.yOrigin;
     const x1Orig = x0Orig + colCount * gridSize;
@@ -594,26 +569,30 @@ const drawBlockmap = (graphy: Graphics): void => {
     graphy.lineStyle({ color: utils.string2hex(gridColor), alignment: 1, width: graphy.line.width * 0.5 });
     for (let i = 0; i < rowCount + 1; i++) {
         const yStart = transformMapYToCanvas(y0Orig + i * gridSize);
-        graphy.drawPolygon([{ x: xy0.x, y: yStart }, { x: xy1.x, y: yStart }]);
+        graphy.drawPolygon([
+            { x: xy0.x, y: yStart },
+            { x: xy1.x, y: yStart },
+        ]);
     }
 
     for (let i = 0; i < colCount + 1; i++) {
         const xStart = transformMapXToCanvas(x0Orig + i * gridSize);
-        graphy.drawPolygon([{ x: xStart, y: xy0.y }, { x: xStart, y: xy1.y }]);
+        graphy.drawPolygon([
+            { x: xStart, y: xy0.y },
+            { x: xStart, y: xy1.y },
+        ]);
     }
     graphy.lineStyle({ width: ogLineW });
 };
 
 const drawGrid = (graphy: Graphics): void => {
-    if (!app || !playpal || !bounds) return;
-    const ppal = playpal;
+    if (!app || !bounds) return;
     const round32 = (num: number) => {
         return Math.round(num / 32) * 32;
-    }
+    };
 
     const gridSize = 32;
-    const gridColor32 = ppal[107].hex;
-    const gridColor64 = ppal[195].hex;
+    const [gridColor32, gridColor64] = selectedPalette.getGridColor(selectedPalette);
     const x0Orig = round32(bounds.left);
     const y0Orig = round32(bounds.top);
     const x1Orig = round32(bounds.right);
@@ -627,14 +606,20 @@ const drawGrid = (graphy: Graphics): void => {
         const is64 = i % 2 === 0;
         graphy.lineStyle({ color: utils.string2hex(is64 ? gridColor64 : gridColor32), width: ogLineW * 0.3 });
         const yStart = transformMapYToCanvas(y0Orig + i * gridSize);
-        graphy.drawPolygon([{ x: xy0.x, y: yStart }, { x: xy1.x, y: yStart }]);
+        graphy.drawPolygon([
+            { x: xy0.x, y: yStart },
+            { x: xy1.x, y: yStart },
+        ]);
     }
 
     for (let i = 0; i < colCount + 1; i++) {
         const is64 = i % 2 === 0;
         graphy.lineStyle({ color: utils.string2hex(is64 ? gridColor64 : gridColor32), width: ogLineW * 0.3 });
         const xStart = transformMapXToCanvas(x0Orig + i * gridSize);
-        graphy.drawPolygon([{ x: xStart, y: xy0.y }, { x: xStart, y: xy1.y }]);
+        graphy.drawPolygon([
+            { x: xStart, y: xy0.y },
+            { x: xStart, y: xy1.y },
+        ]);
     }
     graphy.lineStyle({ width: ogLineW });
 };
@@ -648,7 +633,7 @@ const getHoverRow = (head: string, txt: string) => {
     txtSpan.innerHTML = txt;
     row.appendChild(txtSpan);
     return row;
-}
+};
 
 const drawHover = (data: HoverData) => {
     clearHover();
@@ -660,7 +645,7 @@ const drawHover = (data: HoverData) => {
 
     data.things.forEach((t, idx) => {
         const flagRoom = t.flagsString.length * rowHeight;
-        const height = (4 * rowHeight) + flagRoom;
+        const height = 4 * rowHeight + flagRoom;
         cumulativeHeight += height + 5;
         const top = data.y - 10 - cumulativeHeight - window.scrollY;
         let left = data.x - 90;
@@ -671,7 +656,7 @@ const drawHover = (data: HoverData) => {
         }
 
         const hoverDiv = document.createElement('div');
-        hoverDiv.classList.add('map-hover-div')
+        hoverDiv.classList.add('map-hover-div');
         hoverDiv.style.top = `${idx < 3 ? top : data.y - 85 - flagRoom}px`;
         hoverDiv.style.left = `${left}px`;
         hoverDiv.style.width = `${width}px`;
@@ -679,12 +664,10 @@ const drawHover = (data: HoverData) => {
         hoverDiv.appendChild(getHoverRow('TYPE: ', `${t.thingType} | ${t.thingTypeString}`));
         hoverDiv.appendChild(getHoverRow('GRP: ', `${t.thingGroup}`));
         hoverDiv.appendChild(getHoverRow('POS: ', `(${t.x},${t.y}) | ${t.angle} | ${t.size}`));
-        hoverDiv.appendChild(getHoverRow('FLAGS:', `${t.flagsString.map(f => `<br/><span>${f}</span>`).join('\n')}`));
+        hoverDiv.appendChild(getHoverRow('FLAGS:', `${t.flagsString.map((f) => `<br/><span>${f}</span>`).join('\n')}`));
         parent.appendChild(hoverDiv);
         hoverDivs.push(hoverDiv);
-
     });
-
 };
 
 const clearHover = () => {
@@ -694,6 +677,21 @@ const clearHover = () => {
         });
     }
     hoverDivs = [];
+};
+
+const refreshBottomAreaAndMap = (mapName: string) => {
+    const windowArea = document.getElementById(mapWindowId);
+    const bottomArea = document.getElementById(bottomAreaId);
+    if (windowArea && bottomArea) {
+        windowArea.removeChild(bottomArea);
+        windowArea.appendChild(getBottomArea(mapName));
+    }
+    if (viewport) {
+        otherThingCache = null;
+        monsterThingCache = null;
+        const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
+        reDrawMap(lineWidth);
+    }
 };
 
 const getButtonArea = (mapName: string) => {
@@ -756,12 +754,12 @@ const getButtonArea = (mapName: string) => {
     maxRes.value = maxResImage.toString();
     maxRes.oninput = (e: Event) => {
         const target = e.target as HTMLInputElement;
-        const nan = isNaN(Number(target.value))
+        const nan = isNaN(Number(target.value));
         if (!nan) {
             maxResImage = Number(target.value);
         }
         target.value = maxResImage.toString();
-    }
+    };
     const maxResText = document.createElement('label');
     maxResText.innerHTML = 'Maximum resolution';
     maxResText.htmlFor = maxResId;
@@ -777,7 +775,7 @@ const getButtonArea = (mapName: string) => {
     debounceCheck.onclick = () => {
         debounceZoomEvts = !debounceZoomEvts;
         debounceCheck.checked = debounceZoomEvts;
-    }
+    };
     const debounceCheckText = document.createElement('label');
     debounceCheckText.innerHTML = 'Debounce zoom events';
     debounceCheckText.htmlFor = debounceCheckId;
@@ -785,10 +783,37 @@ const getButtonArea = (mapName: string) => {
     debounceCheckParent.appendChild(debounceCheck);
     lowerSettings.appendChild(debounceCheckParent);
 
+    const paletteSelectParent = document.createElement('div');
+    const paletteSelect = document.createElement('select');
+    paletteSelect.id = paletteOptionId;
+    paletteSelect.name = 'map-palette-select';
+    mapPalettes.forEach((palette) => {
+        const option = document.createElement('option');
+        option.value = palette.name;
+        option.innerText = palette.name;
+        paletteSelect.appendChild(option);
+    });
+    paletteSelect.value = selectedPalette.name;
+    paletteSelect.onchange = (e: Event) => {
+        const target = e.target as HTMLSelectElement;
+        const newPalette = mapPalettes.find((p) => p.name === target.value);
+        if (newPalette) {
+            selectedPalette = newPalette;
+            paletteSelect.value = target.value;
+            initMapWindowModule(mapName);
+        }
+    };
+    const paletteSelectText = document.createElement('label');
+    paletteSelectText.innerHTML = 'Select map palette';
+    paletteSelectText.htmlFor = paletteOptionId;
+    paletteSelectParent.appendChild(paletteSelectText);
+    paletteSelectParent.appendChild(paletteSelect);
+    lowerSettings.appendChild(paletteSelectParent);
+
     buttonContainer.appendChild(upperButtons);
     buttonContainer.appendChild(lowerSettings);
     return buttonContainer;
-}
+};
 
 const getBottomArea = (mapName: string) => {
     const bottomArea = document.createElement('div');
@@ -797,22 +822,7 @@ const getBottomArea = (mapName: string) => {
     bottomArea.appendChild(getToggleArea(mapName));
     bottomArea.appendChild(getButtonArea(mapName));
     return bottomArea;
-}
-
-const refreshBottomAreaAndMap = (mapName: string) => {
-    const windowArea = document.getElementById(mapWindowId);
-    const bottomArea = document.getElementById(bottomAreaId);
-    if (windowArea && bottomArea) {
-        windowArea.removeChild(bottomArea);
-        windowArea.appendChild(getBottomArea(mapName))
-    }
-    if (viewport) {
-        otherThingCache = null;
-        monsterThingCache = null;
-        const lineWidth = Math.max(1 / viewport.scale.x, 0.05);
-        reDrawMap(lineWidth);
-    }
-}
+};
 
 const getToggleArea = (mapName: string) => {
     const toggleAreaParent = document.createElement('div');
@@ -830,19 +840,17 @@ const getToggleArea = (mapName: string) => {
         const isSelected = () => {
             if (toggle === 'ALL' && enabledThingGroups.length === 9) {
                 return true;
-            }
-            else if (
-                toggle === 'DECO'
-                && enabledThingGroups.includes(WadMapThingGroup.DECORATION)
-                && enabledThingGroups.includes(WadMapThingGroup.OBSTACLE)
+            } else if (
+                toggle === 'DECO' &&
+                enabledThingGroups.includes(WadMapThingGroup.DECORATION) &&
+                enabledThingGroups.includes(WadMapThingGroup.OBSTACLE)
             ) {
                 return true;
-            }
-            else if (toggle !== 'ALL' && toggle !== 'DECO') {
+            } else if (toggle !== 'ALL' && toggle !== 'DECO') {
                 return enabledThingGroups.includes(toggle as WadMapThingGroup);
             }
             return false;
-        }
+        };
         container.style.opacity = isSelected() ? '1.0 ' : '0.5';
         const square = document.createElement('div');
         square.style.backgroundColor = getThingColor(toggle);
@@ -853,35 +861,33 @@ const getToggleArea = (mapName: string) => {
         const removeOrAddToggle = (groups: WadMapThingGroup[]) => {
             let copy = [...enabledThingGroups];
             if (isSelected()) {
-                copy = copy.filter(t => !groups.includes(t));
-            }
-            else {
+                copy = copy.filter((t) => !groups.includes(t));
+            } else {
                 copy.push(...groups);
             }
             enabledThingGroups = copy;
-        }
+        };
 
         container.onclick = () => {
             if (toggle === 'ALL') {
                 if (isSelected()) {
                     enabledThingGroups = [];
+                } else {
+                    enabledThingGroups = Object.keys(WadMapThingGroup).filter(
+                        (k) => k !== WadMapThingGroup.UNKNOWN,
+                    ) as WadMapThingGroup[];
                 }
-                else {
-                    enabledThingGroups = Object.keys(WadMapThingGroup).filter(k => k !== WadMapThingGroup.UNKNOWN) as WadMapThingGroup[];
-                }
-            }
-            else if (toggle === 'DECO') {
+            } else if (toggle === 'DECO') {
                 removeOrAddToggle([WadMapThingGroup.OBSTACLE, WadMapThingGroup.DECORATION]);
-            }
-            else {
+            } else {
                 removeOrAddToggle([toggle]);
             }
             refreshBottomAreaAndMap(mapName);
-        }
+        };
 
         container.appendChild(textEl);
         return container;
-    }
+    };
 
     thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.MONSTER));
     thingButtonContainer.appendChild(generateThingToggleButton(WadMapThingGroup.ARTIFACT));
@@ -908,7 +914,7 @@ const getToggleArea = (mapName: string) => {
             if (showMultiPlayer === 1) return 'url("without.png")';
             else if (showMultiPlayer === 2) return 'url("only.png")';
             else return '';
-        }
+        };
         square.style.backgroundImage = getImg();
         container.appendChild(square);
         const textEl = document.createElement('p');
@@ -917,11 +923,11 @@ const getToggleArea = (mapName: string) => {
         container.onclick = () => {
             showMultiPlayer = (showMultiPlayer + 1) % 3;
             refreshBottomAreaAndMap(mapName);
-        }
+        };
 
         container.appendChild(textEl);
         return container;
-    }
+    };
 
     const generateDifficultyButton = (dir: 'hide' | 'show') => {
         const container = document.createElement('div');
@@ -935,25 +941,24 @@ const getToggleArea = (mapName: string) => {
             else if (diff === 2) return 'url("medium.png")';
             else if (diff === 3) return 'url("hard.png")';
             else return '';
-        }
+        };
         square.style.backgroundImage = getImg();
         container.appendChild(square);
         const textEl = document.createElement('p');
-        textEl.innerText = `${dir === 'hide' ? 'Hide' : 'Show'} Skill`
+        textEl.innerText = `${dir === 'hide' ? 'Hide' : 'Show'} Skill`;
 
         container.onclick = () => {
             if (dir === 'hide') {
                 hideDifficulty = (hideDifficulty + 1) % 4;
-            }
-            else {
+            } else {
                 showDifficulty = (showDifficulty + 1) % 4;
             }
             refreshBottomAreaAndMap(mapName);
-        }
+        };
 
         container.appendChild(textEl);
         return container;
-    }
+    };
 
     const generateBoolButton = (text: string, onToggle: () => void, state: boolean) => {
         const container = document.createElement('div');
@@ -967,22 +972,27 @@ const getToggleArea = (mapName: string) => {
         container.onclick = () => {
             onToggle();
             refreshBottomAreaAndMap(mapName);
-        }
+        };
 
         container.appendChild(textEl);
         return container;
-    }
+    };
 
     flagAreaContainer.appendChild(generateNetToggleButton());
     flagAreaContainer.appendChild(generateDifficultyButton('show'));
     flagAreaContainer.appendChild(generateDifficultyButton('hide'));
-    flagAreaContainer.appendChild(generateBoolButton('Blockmap', () => showBlockmap = !showBlockmap, showBlockmap));
-    flagAreaContainer.appendChild(generateBoolButton('Grid', () => showGrid = !showGrid, showGrid));
-    flagAreaContainer.appendChild(generateBoolButton('Automap', () => {
-        lineCache = null;
-        automapMode = !automapMode
-    }, automapMode));
-
+    flagAreaContainer.appendChild(generateBoolButton('Blockmap', () => (showBlockmap = !showBlockmap), showBlockmap));
+    flagAreaContainer.appendChild(generateBoolButton('Grid', () => (showGrid = !showGrid), showGrid));
+    flagAreaContainer.appendChild(
+        generateBoolButton(
+            'Automap',
+            () => {
+                lineCache = null;
+                automapMode = !automapMode;
+            },
+            automapMode,
+        ),
+    );
 
     return toggleAreaParent;
-}
+};

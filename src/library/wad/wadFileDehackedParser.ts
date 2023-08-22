@@ -1,5 +1,10 @@
 import { WadMapThingGroup, WadThing } from '../../interfaces/wad/map/WadMapThing';
-import { defaultWadDehacked, WadDehacked, WadDehackedThing, WadDehackedToThingType } from '../../interfaces/wad/WadDehacked';
+import {
+    defaultWadDehacked,
+    WadDehacked,
+    WadDehackedThing,
+    WadDehackedToThingType,
+} from '../../interfaces/wad/WadDehacked';
 import { WadFileParser, WadParserOptions } from '../../interfaces/wad/WadParser';
 import { dehackedLumpName } from '../constants';
 
@@ -14,10 +19,7 @@ export class WadFileDehackedParser extends WadFileParser {
         const dehackedCharSize = 1;
         const charCount = this.lumps[0].lumpSize / dehackedCharSize;
         const view = new Uint8Array(
-            this.file.slice(
-                this.lumps[0].lumpLocation,
-                this.lumps[0].lumpLocation + this.lumps[0].lumpSize
-            ),
+            this.file.slice(this.lumps[0].lumpLocation, this.lumps[0].lumpLocation + this.lumps[0].lumpSize),
         );
 
         const dehacked: WadDehacked = JSON.parse(JSON.stringify(defaultWadDehacked));
@@ -33,19 +35,18 @@ export class WadFileDehackedParser extends WadFileParser {
             line = line.trim();
             if (line.toLowerCase().includes('thing ')) {
                 lineBuffer.push(line);
-            }
-            else if (lineBuffer.length > 0 && line !== '') {
+            } else if (lineBuffer.length > 0 && line !== '') {
                 lineBuffer.push(line);
-            }
-            else if (lineBuffer.length > 0 && line === '') {
+            } else if (lineBuffer.length > 0 && line === '') {
                 const dehackedThing = this.parseThingLine(lineBuffer);
                 if (dehackedThing) dehacked.things.push(dehackedThing);
                 lineBuffer = [];
             }
         });
         return dehacked;
-    }
+    };
 
+    //Mega cringe, will improve once I'll find some specs or just read dsda source lol
     private parseThingLine = (thingBlock: string[]): WadDehackedThing | null => {
         let dehackedThingType: WadThing | null = null;
         let dehackedThingName: string | null = null;
@@ -63,16 +64,16 @@ export class WadFileDehackedParser extends WadFileParser {
         });
 
         const bits = thingBlock.find((line) => line.toLowerCase().includes('bits = '));
-        if (bits && bits.toLowerCase().includes('countkill')) {
+        const hitPoints = thingBlock.find((line) => line.toLowerCase().includes('hit points = '));
+        if ((bits && bits.toLowerCase().includes('countkill')) || hitPoints) {
             dehackedThingGroup = WadMapThingGroup.MONSTER;
-        }
-        else {
+        } else {
             dehackedThingGroup = WadMapThingGroup.UNKNOWN;
         }
 
         if (dehackedThingType && dehackedThingName && dehackedThingGroup) {
-            return { from: dehackedThingType, to: { name: dehackedThingName, group: dehackedThingGroup } }
+            return { from: dehackedThingType, to: { name: dehackedThingName, group: dehackedThingGroup } };
         }
         return null;
-    }
+    };
 }

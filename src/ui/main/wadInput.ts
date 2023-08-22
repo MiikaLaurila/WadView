@@ -28,9 +28,7 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
                 addLogWindowMessage(`Unzipping ${target.files[0].name}`);
                 const { entries } = await unzip(target.files[0]);
                 await parseZipEntries(entries);
-
-            }
-            else if (wadFile) {
+            } else if (wadFile) {
                 wadFile.loadFile(target.files[0]);
             }
         }
@@ -69,12 +67,11 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
             const url = wadOpenUrlText.value.trim();
             if (url) {
                 loadWadUrl(url);
-            }
-            else {
-                addLogWindowMessage('Please input the URL in the text box.')
+            } else {
+                addLogWindowMessage('Please input the URL in the text box.');
             }
         }
-    }
+    };
     if (wadOpenUrlButton && wadOpenUrlText) {
         wadOpenUrlButton.addEventListener('click', onSelectOpenUrl);
         const sParams = new URLSearchParams(window.location.search);
@@ -83,14 +80,18 @@ export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) =
             wadOpenUrlText.value = fileParam;
             window.history.replaceState({}, '', window.location.origin);
             setTimeout(() => {
-                addLogWindowMessage('URL contained a link to a wad/zip file. Click "Load URL" to try fetching ' + fileParam);
+                addLogWindowMessage(
+                    'URL contained a link to a wad/zip file. Click "Load URL" to try fetching ' + fileParam,
+                );
             }, 100);
         }
     }
 
     const wadBrowseIdgamesElem = document.getElementById('wad-input-idgames') as HTMLButtonElement | null;
     if (wadBrowseIdgamesElem) {
-        wadBrowseIdgamesElem.addEventListener('click', () => { switchContentModule('exsearch'); });
+        wadBrowseIdgamesElem.addEventListener('click', () => {
+            switchContentModule('exsearch');
+        });
     }
 
     return wadFile;
@@ -103,7 +104,13 @@ export const loadWadUrl = async (url: string) => {
     const historyUrl = `${window.location.origin}?file=${encodeURIComponent(url)}`;
     window.history.replaceState({}, '', historyUrl);
 
-    if (url.toLowerCase().split(/(?=.zip)/g).pop()?.startsWith('.zip')) {
+    if (
+        url
+            .toLowerCase()
+            .split(/(?=.zip)/g)
+            .pop()
+            ?.startsWith('.zip')
+    ) {
         try {
             addLogWindowMessage(`Loading ${url}`);
             const file = await dlFile(corsProxy + url);
@@ -111,22 +118,27 @@ export const loadWadUrl = async (url: string) => {
                 const { entries } = await unzip(file);
                 await parseZipEntries(entries);
             }
-        }
-        catch (err) {
+        } catch (err) {
             console.error(err);
             addLogWindowMessage('Failed to fetch the zip from provided URL.¯\\_(ツ)_/¯');
         }
-    }
-    else if (url.toLowerCase().split(/(?=.wad)/g).pop()?.startsWith('.wad')) {
+    } else if (
+        url
+            .toLowerCase()
+            .split(/(?=.wad)/g)
+            .pop()
+            ?.startsWith('.wad')
+    ) {
         const file = await dlFile(corsProxy + url);
         if (wadFile && file) {
             wadFile.loadArrayBuffer(file, url);
         }
+    } else {
+        addLogWindowMessage(
+            'Cannot determine if it is zip or wad from the URL. Or maybe it was not a file at all ¯\\_(ツ)_/¯',
+        );
     }
-    else {
-        addLogWindowMessage('Cannot determine if it is zip or wad from the URL. Or maybe it was not a file at all ¯\\_(ツ)_/¯')
-    }
-}
+};
 
 const parseZipEntries = async (entries: { [key: string]: ZipEntry }) => {
     const wads = Object.entries(entries).filter((e) => e[0].toLowerCase().endsWith('.wad'));
@@ -139,7 +151,7 @@ const parseZipEntries = async (entries: { [key: string]: ZipEntry }) => {
     if (wadFile) {
         wadFile.loadArrayBuffer(await entry.arrayBuffer(), entry.name);
     }
-}
+};
 
 const dlFile = async (url: string): Promise<ArrayBuffer | null> => {
     const response = await fetch(url);
@@ -164,7 +176,11 @@ const dlFile = async (url: string): Promise<ArrayBuffer | null> => {
         chunks.push(value);
         receivedLength += value.length;
 
-        addLogWindowMessage(`Received ${receivedLength} of ${contentLength} (${(receivedLength / contentLength * 100).toFixed(2)}%)`, false, !firstMsg);
+        addLogWindowMessage(
+            `Received ${receivedLength} of ${contentLength} (${((receivedLength / contentLength) * 100).toFixed(2)}%)`,
+            false,
+            !firstMsg,
+        );
         firstMsg = false;
     }
 
@@ -175,4 +191,4 @@ const dlFile = async (url: string): Promise<ArrayBuffer | null> => {
         position += chunk.length;
     }
     return chunksAll.buffer;
-}
+};

@@ -7,21 +7,20 @@ import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
 import { WadPlaypal } from '../../interfaces/wad/WadPlayPal';
 import { switchContentModule } from './contentModule';
 
-
 const pages = ['Metadata', 'Colors', 'Maps'] as const;
-type PageType = typeof pages[number];
+type PageType = (typeof pages)[number];
 let openedGroups: PageType[] = [];
 let eventListenersAdded: PageType[] = [];
 
 const removeFromOpened = (type: PageType) => {
-    const idx = openedGroups.findIndex(g => g === type);
+    const idx = openedGroups.findIndex((g) => g === type);
     const copy = [...openedGroups];
     copy.splice(idx, 1);
     openedGroups = copy;
 };
 
 const removeFromEventListenersAdded = (type: PageType) => {
-    const idx = eventListenersAdded.findIndex(g => g === type);
+    const idx = eventListenersAdded.findIndex((g) => g === type);
     const copy = [...eventListenersAdded];
     copy.splice(idx, 1);
     eventListenersAdded = copy;
@@ -71,7 +70,7 @@ const createHead = (parent: HTMLDivElement, name: PageType) => {
     newChild.innerText = name;
     newChild.classList.add('head');
     if (!eventListenersAdded.includes(name)) {
-        newChild.addEventListener('click', evt => {
+        newChild.addEventListener('click', (evt) => {
             eventListener(name, evt);
         });
     }
@@ -101,23 +100,33 @@ export const initializeSideBarMeta = (
     createHead(metaSection, 'Metadata');
 
     if (header.type !== WadType.UNKNOWN) {
-        createChild(metaSection, 'HEADER', () => { switchContentModule('header'); });
+        createChild(metaSection, 'HEADER', () => {
+            switchContentModule('header');
+        });
     }
 
     if (directory.length > 0) {
-        createChild(metaSection, 'DIRECTORY', () => { switchContentModule('directory'); });
+        createChild(metaSection, 'DIRECTORY', () => {
+            switchContentModule('directory');
+        });
     }
 
     if (mapGroups.length > 0) {
-        createChild(metaSection, 'MAP GROUPS', () => { switchContentModule('mapgroup'); });
+        createChild(metaSection, 'MAP GROUPS', () => {
+            switchContentModule('mapgroup');
+        });
     }
 
     if (endoom.length > 0) {
-        createChild(metaSection, 'ENDOOM', () => { switchContentModule('endoom'); });
+        createChild(metaSection, 'ENDOOM', () => {
+            switchContentModule('endoom');
+        });
     }
 
     if (dehacked) {
-        createChild(metaSection, 'DEHACKED', () => { switchContentModule('dehacked'); });
+        createChild(metaSection, 'DEHACKED', () => {
+            switchContentModule('dehacked');
+        });
     }
 
     createChild(metaSection, 'LOG', () => {
@@ -166,9 +175,9 @@ export const initializeSideBarMaps = (maps: WadMapList) => {
         removeFromEventListenersAdded('Maps');
         createHead(mapSection, 'Maps');
 
-        maps.forEach(m => {
+        maps.forEach((m) => {
             createChild(mapSection, m.name, () => {
-                switchContentModule('map', { mapName: m.name })
+                switchContentModule('map', { mapName: m.name });
             });
         });
     }

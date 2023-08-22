@@ -3,7 +3,6 @@ import { WadPlaypalTypedEntry } from '../../interfaces/wad/WadPlayPal';
 import { createModule } from '../main/contentModule';
 import { setTopBarPageName } from '../main/topbar';
 
-
 const colormapWindowId = 'colormap-window';
 
 export const initColormapWindowModule = () => {
@@ -15,17 +14,13 @@ export const initColormapWindowModule = () => {
     const colormap = getColormap();
     const playpal = getPlaypal();
     if (colormap && playpal) {
-        playpal.typedPlaypal.forEach(e => {
+        playpal.typedPlaypal.forEach((e) => {
             createColormapEntry(colormapWindow, colormap, e);
         });
     }
 };
 
-const createColormapEntry = (
-    parent: HTMLDivElement,
-    colormap: number[][],
-    playpal: WadPlaypalTypedEntry
-) => {
+const createColormapEntry = (parent: HTMLDivElement, colormap: number[][], playpal: WadPlaypalTypedEntry) => {
     const colorBlockSize = 3;
     const container = document.createElement('div');
     container.style.margin = '20px';

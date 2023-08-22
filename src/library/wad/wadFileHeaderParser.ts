@@ -3,7 +3,6 @@ import { WadType, WadHeader } from '../../interfaces/wad/WadHeader';
 import { WadParserOptions, WadFileParser } from '../../interfaces/wad/WadParser';
 import { utf8ArrayToStr } from '../utilities/stringUtils';
 
-
 export class WadFileHeaderParser extends WadFileParser {
     constructor(opts: WadParserOptions) {
         super(opts);
@@ -24,5 +23,5 @@ export class WadFileHeaderParser extends WadFileParser {
             directoryLocation,
         };
         return header;
-    }
+    };
 }

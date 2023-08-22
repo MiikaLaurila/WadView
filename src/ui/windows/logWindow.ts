@@ -19,14 +19,16 @@ export const initLogWindowModule = () => {
 
     const clearButton = document.createElement('button');
     clearButton.id = logWindowClearId;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    clearButton.onclick = () => { document.getElementById(logWindowMessagesId)!.innerHTML = '' };
+    clearButton.onclick = () => {
+        const tempLog = document.getElementById(logWindowMessagesId);
+        if (tempLog) tempLog.innerHTML = '';
+    };
     clearButton.innerText = 'Clear Log';
 
     logWindow.appendChild(clearButton);
     setTopBarPageName('Log');
-    logMessages.forEach(l => addLogWindowMessage(l, true));
-}
+    logMessages.forEach((l) => addLogWindowMessage(l, true));
+};
 
 export const clearLogWindow = () => {
     logMessages = [];
@@ -34,7 +36,7 @@ export const clearLogWindow = () => {
     if (logWindowMessages) {
         logWindowMessages.innerHTML = '';
     }
-}
+};
 
 export const addLogWindowMessage = (message: string, skipPush = false, resetLast = false) => {
     const logWindowMessages = document.getElementById(logWindowMessagesId) as HTMLDivElement | null;
@@ -49,4 +51,4 @@ export const addLogWindowMessage = (message: string, skipPush = false, resetLast
         logWindowMessages.appendChild(newMsg);
         if (!skipPush) logMessages.push(message);
     }
-}
+};

@@ -3,7 +3,6 @@ import { WadHeader } from '../../interfaces/wad/WadHeader';
 import { WadParserOptions, WadFileParser } from '../../interfaces/wad/WadParser';
 import { utf8ArrayToStr } from '../utilities/stringUtils';
 
-
 interface WadDirectoryParserOptions extends WadParserOptions {
     header: WadHeader;
 }
@@ -32,5 +31,5 @@ export class WadFileDirectoryParser extends WadFileParser {
             directory.push({ lumpLocation, lumpSize, lumpName });
         }
         return directory;
-    }
+    };
 }

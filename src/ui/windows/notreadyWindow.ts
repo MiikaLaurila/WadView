@@ -5,4 +5,4 @@ export const initNotReadyWindowModule = () => {
     const text = document.createElement('p');
     text.innerHTML = 'Page not implemented';
     baseModule.appendChild(text);
-}
+};

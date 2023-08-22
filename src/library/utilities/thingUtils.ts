@@ -15,7 +15,11 @@ export const getThingColor = (thingGroup: WadMapThingGroup | 'ALL' | 'DECO'): st
         return 'yellow';
     } else if (thingGroup === WadMapThingGroup.AMMO) {
         return '#ad7e0a';
-    } else if (thingGroup === WadMapThingGroup.OBSTACLE || thingGroup === WadMapThingGroup.DECORATION || thingGroup === 'DECO') {
+    } else if (
+        thingGroup === WadMapThingGroup.OBSTACLE ||
+        thingGroup === WadMapThingGroup.DECORATION ||
+        thingGroup === 'DECO'
+    ) {
         return 'pink';
     } else if (thingGroup === 'ALL') {
         return 'white';

@@ -15,7 +15,7 @@ const idGamesMirrorList = [
     'https://www.quaddicted.com/files/idgames/',
     'https://ftpmirror1.infania.net/pub/idgames/',
     'https://youfailit.net/pub/idgames/',
-    'https://www.gamers.org/pub/idgames/'
+    'https://www.gamers.org/pub/idgames/',
 ];
 const idGamesApiUrl = 'https://www.doomworld.com/idgames/api/api.php?';
 const dsdaBaseUrl = 'https://dsdarchive.com';
@@ -43,7 +43,7 @@ export const initExternalSearchBrowser = () => {
     }
 
     exSearchWindow.appendChild(searchContainers);
-}
+};
 
 const executeIdGamesSearch = (val: string, loadParent: HTMLElement) => {
     clearResults();
@@ -58,10 +58,9 @@ const executeIdGamesSearch = (val: string, loadParent: HTMLElement) => {
         .finally(() => {
             clearLoading('idgames-loader');
         });
-}
+};
 
 const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
-
     const parseWadPage = (doc: Document): DSDAResponse | null => {
         const [head] = Array.from(doc.getElementsByTagName('h1'));
         const [linkBar] = Array.from(doc.getElementsByClassName('p-short one-line'));
@@ -72,10 +71,10 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
                 title: fileLink.innerText,
                 fileUrl: fileLink.href.replace(window.location.origin, `${dsdaBaseUrl}/`),
                 dsdaUrl: tableLink.href.replace(window.location.origin, `${dsdaBaseUrl}/`).replace('/table_view', ''),
-            }
+            };
         }
         return null;
-    }
+    };
 
     clearResults();
     const urlFormatted = encodeURIComponent(val);
@@ -91,19 +90,22 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
                 if (parsedObj) lastDsdaGameResult = [parsedObj];
             } else {
                 const linksToPages = Array.from(doc.getElementsByTagName('a'))
-                    .filter(a => a.href.includes('/wads/'))
-                    .map(a => a.href.replace(window.location.origin, '/'));
-                const promises = linksToPages.map((l) => fetch(corsProxy + dsdaBaseUrl + l)
-                    .then(async (r) => parseWadPage(domParser.parseFromString(await r.text(), 'text/html'))));
+                    .filter((a) => a.href.includes('/wads/'))
+                    .map((a) => a.href.replace(window.location.origin, '/'));
+                const promises = linksToPages.map((l) =>
+                    fetch(corsProxy + dsdaBaseUrl + l).then(async (r) =>
+                        parseWadPage(domParser.parseFromString(await r.text(), 'text/html')),
+                    ),
+                );
                 const responses = await Promise.all(promises);
-                lastDsdaGameResult = responses.filter(r => r !== null) as DSDAResponseList;
+                lastDsdaGameResult = responses.filter((r) => r !== null) as DSDAResponseList;
             }
             writeResults('dsda');
         })
         .finally(() => {
             clearLoading('dsda-loader');
         });
-}
+};
 
 const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLElement) => void) => {
     const container = document.createElement('div');
@@ -122,38 +124,37 @@ const createSearchDiv = (host: string, onSearch: (val: string, loadParent: HTMLE
         if (button) {
             if (newVal.length >= 3 && button.disabled) {
                 button.disabled = false;
-            }
-            else if (newVal.length < 3 && !button.disabled) {
+            } else if (newVal.length < 3 && !button.disabled) {
                 button.disabled = true;
             }
         }
-
-    }
+    };
     searchField.onkeydown = function (e) {
         const newVal = (e.target as HTMLInputElement).value.trim();
         if (e.key === 'Enter' && newVal.length >= 3 && container.parentElement) {
             onSearch(searchField.value.trim(), container.parentElement);
         }
-    }
+    };
     searchDiv.appendChild(searchField);
 
     const searchButton = document.createElement('button');
     searchButton.innerText = 'Search';
     searchButton.id = `${searchButtonId}-${host}`;
     searchButton.disabled = true;
-    searchButton.onclick = () => { container.parentElement && onSearch(searchField.value.trim(), container.parentElement); }
+    searchButton.onclick = () => {
+        container.parentElement && onSearch(searchField.value.trim(), container.parentElement);
+    };
     searchDiv.appendChild(searchButton);
     container.appendChild(searchDiv);
     return container;
-}
-
+};
 
 const clearResults = () => {
     const resultsDiv = document.getElementById(resultsId);
     if (resultsDiv) {
         resultsDiv.parentElement?.removeChild(resultsDiv);
     }
-}
+};
 
 const writeResults = (type: 'idgames' | 'dsda') => {
     clearResults();
@@ -165,7 +166,7 @@ const writeResults = (type: 'idgames' | 'dsda') => {
         const msg = document.createElement('p');
         msg.innerText = 'Found some files but none were levels';
         resultsDiv.appendChild(msg);
-    }
+    };
 
     const exSearchWindow = document.getElementById(exSearchWindowId);
     if (!exSearchWindow) return;
@@ -179,20 +180,17 @@ const writeResults = (type: 'idgames' | 'dsda') => {
             if (Array.isArray(file)) {
                 if (file.length === 0) {
                     writeNoLevels();
-                }
-                else {
+                } else {
                     file.forEach((f) => {
                         containerDiv.appendChild(createIdgamesWadCard(f));
                     });
                     resultsDiv.appendChild(containerDiv);
                 }
-            }
-            else {
+            } else {
                 containerDiv.appendChild(createIdgamesWadCard(file));
                 resultsDiv.appendChild(containerDiv);
             }
-        }
-        else if (lastIdGamesResult.warning) {
+        } else if (lastIdGamesResult.warning) {
             const head = document.createElement('p');
             head.style.fontWeight = 'bold';
             head.innerText = lastIdGamesResult.warning.type;
@@ -201,8 +199,7 @@ const writeResults = (type: 'idgames' | 'dsda') => {
             msg.innerText = lastIdGamesResult.warning.message;
             resultsDiv.appendChild(msg);
         }
-    }
-    else if (type === 'dsda') {
+    } else if (type === 'dsda') {
         if (!lastDsdaGameResult) return;
         lastDsdaGameResult.forEach((f) => {
             containerDiv.appendChild(createDsdaWadCard(f));
@@ -210,8 +207,7 @@ const writeResults = (type: 'idgames' | 'dsda') => {
         resultsDiv.appendChild(containerDiv);
     }
     exSearchWindow.appendChild(resultsDiv);
-}
-
+};
 
 const createField = (k: string, v: string) => {
     const kEl = document.createElement('p');
@@ -220,19 +216,19 @@ const createField = (k: string, v: string) => {
     vEl.innerText = v;
     kEl.appendChild(vEl);
     return kEl;
-}
+};
 
 const formatBytes = (bytes: number, decimals = 2) => {
-    if (!+bytes) return '0 Bytes'
+    if (!+bytes) return '0 Bytes';
 
-    const k = 1024
-    const dm = decimals < 0 ? 0 : decimals
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-}
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+};
 
 const createIdgamesWadCard = (f: IdGamesResponseFile) => {
     const cardDiv = document.createElement('div');
@@ -262,11 +258,11 @@ const createIdgamesWadCard = (f: IdGamesResponseFile) => {
     useAsWadButton.onclick = () => {
         const urlBase = idGamesMirrorList[Math.floor(Math.random() * idGamesMirrorList.length)];
         loadWadUrl(urlBase + f.dir + f.filename);
-    }
+    };
     buttonsDiv.appendChild(useAsWadButton);
 
     return cardDiv;
-}
+};
 
 const createDsdaWadCard = (f: DSDAResponse) => {
     const cardDiv = document.createElement('div');
@@ -291,8 +287,8 @@ const createDsdaWadCard = (f: DSDAResponse) => {
     useAsWadButton.innerText = 'Load WAD';
     useAsWadButton.onclick = () => {
         loadWadUrl(f.fileUrl);
-    }
+    };
     buttonsDiv.appendChild(useAsWadButton);
 
     return cardDiv;
-}
+};

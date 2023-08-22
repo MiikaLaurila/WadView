@@ -24,7 +24,7 @@ export const initMapGroupWindowModule = () => {
             const cell = document.createElement('div');
             cell.innerHTML = text.toString();
             return cell;
-        }
+        };
 
         const mapNameRow = document.createElement('div');
         mapNameRow.style.fontWeight = 'bold';
@@ -49,4 +49,4 @@ export const initMapGroupWindowModule = () => {
         });
         container.appendChild(splitContainer);
     });
-}
+};

@@ -25,11 +25,11 @@ export const initHeaderWindowModule = () => {
         vElem.innerText = v;
         holder.appendChild(vElem);
         return holder;
-    }
+    };
 
     if (header) {
         container.appendChild(createRow('Wad Type: ', header.type));
         container.appendChild(createRow('Directory Entries: ', header.directoryEntryCount.toString()));
         container.appendChild(createRow('Directory Offset: ', header.directoryLocation.toString()));
     }
-}
+};

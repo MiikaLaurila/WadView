@@ -17,12 +17,12 @@ export interface IdGamesResponseFile {
 export interface IdGamesResponse {
     content?: {
         file: IdGamesResponseFile[] | IdGamesResponseFile;
-    }
+    };
     warning?: {
         type: string;
         message: string;
-    }
+    };
     meta: {
         version: number;
-    }
+    };
 }

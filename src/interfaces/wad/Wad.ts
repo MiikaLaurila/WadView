@@ -12,7 +12,7 @@ export interface Wad {
     directory: WadDirectory;
     mapGroups: WadMapGroupList;
     textures: WadTextures;
-    // patches: 
+    // patches:
     maps: WadMapList;
     playpal: WadPlaypal;
     colormap: WadColorMap;
@@ -29,5 +29,5 @@ export const defaultWad: Readonly<Partial<Wad>> = {
     colormap: undefined,
     endoom: undefined,
     textures: undefined,
-    dehacked: undefined
+    dehacked: undefined,
 };
