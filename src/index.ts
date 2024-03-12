@@ -6,12 +6,13 @@ import { WadFileEvent } from './interfaces/wad/WadFileEvent';
 import { WadHeader, defaultWadHeader } from './interfaces/wad/WadHeader';
 import { WadPlaypal, defaultPlaypal } from './interfaces/wad/WadPlayPal';
 import { initContentModule } from './ui/main/contentModule';
-import { initializeSideBarMeta, initializeSideBarColors, initializeSideBarMaps } from './ui/main/sidebar';
+import { initializeSideBarMeta, initializeSideBarColors, initializeSideBarMaps, initializeSideBarTextures } from './ui/main/sidebar';
 import { setTopBarFileName } from './ui/main/topbar';
 import { initWadInput } from './ui/main/wadInput';
 import { addLogWindowMessage } from './ui/windows/logWindow';
 import { WadEndoom } from './interfaces/wad/WadEndoom';
 import { WadDehacked } from './interfaces/wad/WadDehacked';
+import { WadTextures } from './interfaces/wad/texture/WadTextures';
 
 let header: WadHeader = defaultWadHeader;
 let directory: WadDirectory = [];
@@ -21,6 +22,7 @@ let playpal: WadPlaypal = defaultPlaypal;
 let colormap: WadColorMap = [];
 let endoom: WadEndoom = [];
 let dehacked: WadDehacked | null = null;
+let textures: WadTextures | null = null;
 let niceFileName = '';
 
 const resetParsed = () => {
@@ -41,6 +43,7 @@ export const getPlaypal = () => playpal;
 export const getColormap = () => colormap;
 export const getEndoom = () => endoom;
 export const getDehacked = () => dehacked;
+export const getTextures = () => textures;
 export const getNiceFileName = () => niceFileName;
 
 const loadWholeWad = async () => {
@@ -86,6 +89,11 @@ const loadWholeWad = async () => {
         dehacked = tempDehacked;
     }
 
+    const tempTextures = await wadFile.textures();
+    if (tempTextures) {
+        textures = tempTextures;
+    }
+
     addLogWindowMessage(`${wadFile.fileUrl} loaded into memory`);
     onWadFileEvent(WadFileEvent.LOADING_READY);
     niceFileName = wadFile.niceFileName;
@@ -99,6 +107,7 @@ const onWadFileEvent = (evt: WadFileEvent) => {
         initializeSideBarMeta(header, directory, mapGroups, endoom, dehacked);
         initializeSideBarColors(playpal, colormap);
         initializeSideBarMaps(maps);
+        initializeSideBarTextures(textures);
     }
 };
 

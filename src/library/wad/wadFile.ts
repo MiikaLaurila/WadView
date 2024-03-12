@@ -1,10 +1,10 @@
 import { defaultWad, Wad } from '../../interfaces/wad/Wad';
 import { WadHeader } from '../../interfaces/wad/WadHeader';
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
-import { WadDirectory } from '../../interfaces/wad/WadDirectory';
+import { WadDirectory, WadDirectoryEntry } from '../../interfaces/wad/WadDirectory';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { preFilledPlaypal, WadPlaypal } from '../../interfaces/wad/WadPlayPal';
-import { colormapLumpName, dehackedLumpName, endoomLumpName, playpalLumpName } from '../constants';
+import { colormapLumpName, dehackedLumpName, endoomLumpName, playpalLumpName, pnamesLumpName, texture1LumpName, texture2LumpName } from '../constants';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileMapParser, WadMapParsingOptions } from './wadFileMapParser';
 import { WadFilePlaypalParser } from './wadFilePlaypalParser';
@@ -16,6 +16,8 @@ import { WadEndoom } from '../../interfaces/wad/WadEndoom';
 import { WadFileEndoomParser } from './wadFileEndoomParser';
 import { WadFileDehackedParser } from './wadFileDehackedParser';
 import { WadDehacked } from '../../interfaces/wad/WadDehacked';
+import { WadTextures } from '../../interfaces/wad/texture/WadTextures';
+import { WadFileTexturesParser } from './wadTextureParser';
 
 interface LogMessage {
     evt: WadFileEvent;
@@ -417,5 +419,33 @@ export class WadFile {
 
     private setDehacked(dehacked: WadDehacked | null): void {
         this._wadStruct.dehacked = dehacked;
+    }
+
+    public async textures(): Promise<WadTextures | null> {
+        const dir = await this.directory();
+
+        if (dir === null) {
+            return null;
+        }
+
+        if (this._wadStruct.textures !== undefined) {
+            return this._wadStruct.textures;
+        }
+
+        await this.sendEvent(WadFileEvent.TEXTURES_PARSIN, `Textures parsing for ${this._fileUrl}`);
+        const endoomParser = new WadFileTexturesParser({
+            lumps: [],
+            dir: dir,
+            file: this.wadFile,
+            sendEvent: this.sendEvent,
+        });
+        const textures = endoomParser.parseTextures();
+
+        this.setTextures(textures);
+        return textures;
+    }
+
+    private setTextures(textures: WadTextures): void {
+        this._wadStruct.textures = textures;
     }
 }

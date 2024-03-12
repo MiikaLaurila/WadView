@@ -1,3 +1,5 @@
+import { WadPatch } from './WadPatch';
+
 export interface WadTexturePatch {
     xOffset: number;
     yOffset: number;
@@ -17,7 +19,8 @@ export interface WadTexture {
 }
 
 export interface WadTextures {
-    patchNames: [];
+    patchNames: string[];
+    patches: Record<string, WadPatch>;
     texture1: WadTexture[];
     texture2: WadTexture[];
 }

@@ -1,0 +1,26 @@
+.full-screen-modal {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+}
+
+.full-screen-modal-close {
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    margin: 20px;
+    font-size: 40px;
+    font-weight: bold;
+    color: black;
+}
+
+.full-screen-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

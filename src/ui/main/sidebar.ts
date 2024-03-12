@@ -1,4 +1,5 @@
 import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
+import { WadTextures } from '../../interfaces/wad/texture/WadTextures';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 import { WadDirectory } from '../../interfaces/wad/WadDirectory';
@@ -7,7 +8,7 @@ import { WadHeader, WadType } from '../../interfaces/wad/WadHeader';
 import { WadPlaypal } from '../../interfaces/wad/WadPlayPal';
 import { switchContentModule } from './contentModule';
 
-const pages = ['Metadata', 'Colors', 'Maps'] as const;
+const pages = ['Metadata', 'Colors', 'Maps', 'Textures'] as const;
 type PageType = (typeof pages)[number];
 let openedGroups: PageType[] = [];
 let eventListenersAdded: PageType[] = [];
@@ -179,6 +180,28 @@ export const initializeSideBarMaps = (maps: WadMapList) => {
             createChild(mapSection, m.name, () => {
                 switchContentModule('map', { mapName: m.name });
             });
+        });
+    }
+};
+
+export const initializeSideBarTextures = (textures: WadTextures | null) => {
+    if (!textures) return;
+    const textureSection = document.getElementById('section-textures') as HTMLDivElement | undefined;
+    if (!textureSection) {
+        return;
+    }
+
+    if (textures.patchNames.length > 0 || textures.texture1.length > 0 || textures.texture2.length > 0) {
+        textureSection.innerHTML = '';
+        textureSection.style.removeProperty('display');
+        removeFromOpened('Maps');
+        removeFromEventListenersAdded('Maps');
+        createHead(textureSection, 'Textures');
+    }
+
+    if (textures.patchNames.length > 0) {
+        createChild(textureSection, 'PATCHES', () => {
+            switchContentModule('patches');
         });
     }
 };

@@ -13,3 +13,5 @@ import './endoom.css';
 import './loader.css';
 import './exSearchBrowser.css';
 import './dehacked.css';
+import './patches.css';
+import './modal.css';

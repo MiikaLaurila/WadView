@@ -9,12 +9,13 @@ import { disposeMapWindowModule, initMapWindowModule } from '../windows/mapWindo
 import { initNotReadyWindowModule } from '../windows/notreadyWindow';
 import { initPlaypalWindowModule } from '../windows/playpalWindow';
 import { initDehackedWindowModule } from '../windows/dehackedWindow';
+import { initPatchesWindowModule } from '../windows/patchesWindow';
 
 //prettier-ignore
 export const contentModule = [
     'log', 'map', 'playpal', 'colormap',
     'notImplemented', 'directory', 'mapgroup',
-    'header', 'endoom', 'exsearch', 'dehacked'
+    'header', 'endoom', 'exsearch', 'dehacked', 'patches',
 ] as const;
 export type ContentModuleType = (typeof contentModule)[number];
 
@@ -84,6 +85,9 @@ export const switchContentModule = (id: ContentModuleType, options?: ModuleOptio
             break;
         case 'dehacked':
             initDehackedWindowModule();
+            break;
+        case 'patches':
+            initPatchesWindowModule();
             break;
         case 'notImplemented':
             initNotReadyWindowModule();
