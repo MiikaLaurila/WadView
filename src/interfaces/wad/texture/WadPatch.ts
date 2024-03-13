@@ -9,5 +9,5 @@ export interface WadPatch {
     height: number;
     xOffset: number;
     yOffset: number;
-    columns: WadPatchPost[];
+    columns: WadPatchPost[][];
 }

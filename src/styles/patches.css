@@ -55,3 +55,12 @@
 .patches-container canvas:hover {
     cursor: pointer;
 }
+
+.patches-texture-cell {
+    text-decoration: underline;
+}
+
+
+.patches-texture-cell:hover {
+    cursor: pointer;
+}

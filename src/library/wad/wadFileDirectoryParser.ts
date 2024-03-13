@@ -27,7 +27,7 @@ export class WadFileDirectoryParser extends WadFileParser {
             const viewStart = i * directoryEntryLength;
             const lumpLocation = new Int32Array(view.buffer.slice(viewStart, viewStart + 4))[0];
             const lumpSize = new Int32Array(view.buffer.slice(viewStart + 4, viewStart + 8))[0];
-            const lumpName = utf8ArrayToStr(view.subarray(viewStart + 8, viewStart + 16));
+            const lumpName = utf8ArrayToStr(view.subarray(viewStart + 8, viewStart + 16)).toUpperCase();
             directory.push({ lumpLocation, lumpSize, lumpName });
         }
         return directory;

@@ -4,7 +4,15 @@ import { WadMapGroupList, WadMapList } from '../../interfaces/wad/map/WadMap';
 import { WadDirectory, WadDirectoryEntry } from '../../interfaces/wad/WadDirectory';
 import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
 import { preFilledPlaypal, WadPlaypal } from '../../interfaces/wad/WadPlayPal';
-import { colormapLumpName, dehackedLumpName, endoomLumpName, playpalLumpName, pnamesLumpName, texture1LumpName, texture2LumpName } from '../constants';
+import {
+    colormapLumpName,
+    dehackedLumpName,
+    endoomLumpName,
+    playpalLumpName,
+    pnamesLumpName,
+    texture1LumpName,
+    texture2LumpName,
+} from '../constants';
 import { WadColorMap } from '../../interfaces/wad/WadColorMap';
 import { WadFileMapParser, WadMapParsingOptions } from './wadFileMapParser';
 import { WadFilePlaypalParser } from './wadFilePlaypalParser';
@@ -432,7 +440,7 @@ export class WadFile {
             return this._wadStruct.textures;
         }
 
-        await this.sendEvent(WadFileEvent.TEXTURES_PARSIN, `Textures parsing for ${this._fileUrl}`);
+        await this.sendEvent(WadFileEvent.TEXTURES_PARSING, `Textures parsing for ${this._fileUrl}`);
         const endoomParser = new WadFileTexturesParser({
             lumps: [],
             dir: dir,
