@@ -63,16 +63,22 @@ export class WadFileTexturesParser extends WadFileParser {
             let endReached = false;
             let viewPos = 0;
             let watchDog = 100;
+            let prevYOffset = -1;
             columns.push([]);
             while (!endReached && watchDog >= 0) {
-                const yOffset = new Uint8Array(view.buffer.slice(colOffset + viewPos, colOffset + viewPos + 1))[0];
+                const readYOffset = new Uint8Array(view.buffer.slice(colOffset + viewPos, colOffset + viewPos + 1))[0];
 
-                if (yOffset === 255) {
+                if (readYOffset === 255) {
                     columns[idx].push({
                         yOffset: 0,
                         data: [],
                     });
                     endReached = true;
+                }
+
+                let actualYOffset = readYOffset;
+                if (actualYOffset <= prevYOffset) {
+                    actualYOffset = prevYOffset + readYOffset;
                 }
 
                 const len = new Uint8Array(view.buffer.slice(colOffset + viewPos + 1, colOffset + viewPos + 2))[0];
@@ -89,13 +95,14 @@ export class WadFileTexturesParser extends WadFileParser {
                     viewPos = viewPos + 3 + len + 1;
                 }
                 columns[idx].push({
-                    yOffset,
+                    yOffset: actualYOffset,
                     data,
                 });
                 watchDog--;
                 if (watchDog === 0) {
                     console.error(patchLump, 'triggered watchdog in texture parsing');
                 }
+                prevYOffset = actualYOffset;
             }
         });
 
