@@ -1,7 +1,7 @@
 import { isMapLump, type MapLump } from '../../../library/constants';
 import { type Point } from '../../Point';
 import { type WadDirectoryEntry } from '../WadDirectory';
-import { defaultWadMapBlockmap, type WadMapBlockMap } from './WadMapBlockMap';
+import { defaultWadMapBlockmap, type WadMapBlockMap } from './WadMapBlockmap';
 import { type WadMapLinedef } from './WadMapLinedef';
 import { type WadMapNode } from './WadMapNode';
 import { type WadMapRejectTable } from './WadMapRejectTable';

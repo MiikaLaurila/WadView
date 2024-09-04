@@ -1,6 +1,6 @@
 import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
-import { WadMapBlockMap, defaultWadMapBlockmap } from '../../interfaces/wad/map/WadMapBlockMap';
+import { WadMapBlockMap, defaultWadMapBlockmap } from '../../interfaces/wad/map/WadMapBlockmap';
 import { WadMapLinedef, extractWadMapLinedefFlags } from '../../interfaces/wad/map/WadMapLinedef';
 import { WadMapNode, WadMapNodeChildType } from '../../interfaces/wad/map/WadMapNode';
 import { WadMapRejectTable } from '../../interfaces/wad/map/WadMapRejectTable';

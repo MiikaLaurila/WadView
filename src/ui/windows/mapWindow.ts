@@ -4,7 +4,7 @@ import { getDehacked, getMaps, getNiceFileName } from '../..';
 import { Point } from '../../interfaces/Point';
 import { defaultWadMap, WadMap } from '../../interfaces/wad/map/WadMap';
 import { WadMapBBox } from '../../interfaces/wad/map/WadMapBBox';
-import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockMap';
+import { WadMapBlockMap } from '../../interfaces/wad/map/WadMapBlockmap';
 import { WadMapThing, WadMapThingDehacked, WadMapThingGroup } from '../../interfaces/wad/map/WadMapThing';
 import { WadDehacked } from '../../interfaces/wad/WadDehacked';
 import { getThingColor } from '../../library/utilities/thingUtils';
