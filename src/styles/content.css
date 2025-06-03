@@ -1,10 +1,11 @@
 #content {
-    position: relative;
-    top: 43px;
-    left: 208px;
-    width: calc(100% - 208px);
-    font-family: Arial;
-    font-size: 14px;
+	position: relative;
+	top: 43px;
+	left: 208px;
+	width: calc(100% - 208px);
+	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
+	font-family: Arial;
+	font-size: 14px;
 }
 
 /* .module {

@@ -1,8 +1,9 @@
 button {
-    font-family: 'Roboto Mono';
-    font-size: 12px;
+	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
+	font-family: "Roboto Mono";
+	font-size: 12px;
 }
 
 h1 {
-    font-weight: bold;
+	font-weight: bold;
 }

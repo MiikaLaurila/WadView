@@ -1,0 +1,18 @@
+.flats-container {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.flats-container .flats-split-container {
+	margin: 8px;
+	border: 1px solid black;
+}
+
+.flats-container .flats-split-container > div:nth-child(1) {
+	border-bottom: 1px solid black;
+}
+
+.flats-container .flats-data-container {
+	display: flex;
+    padding: 8px;
+}

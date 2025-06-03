@@ -1,1 +1,0 @@
-export type WadMapRejectTable = boolean[][];

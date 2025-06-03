@@ -1,194 +1,218 @@
-import { WadFileEvent } from '../../interfaces/wad/WadFileEvent';
-import { WadFile } from '../../library/wad/wadFile';
-import { addLogWindowMessage, clearLogWindow } from '../windows/logWindow';
-import { switchContentModule } from './contentModule';
-import { unzip, ZipEntry } from 'unzipit';
-import { corsProxy } from '../../library/constants';
+import { type ZipEntry, unzip } from "unzipit";
+import type { WadFileEvent } from "wadview-lib";
+import { WadFile } from "wadview-lib";
+import { corsProxy } from "../../constants";
+import { addLogWindowMessage, clearLogWindow } from "../windows/logWindow";
+import { switchContentModule } from "./contentModule";
 
 let wadFile: WadFile | null = null;
 
-export const initWadInput = (eventListener?: (evt: WadFileEvent, msg?: string) => void): WadFile => {
-    const onWadEvent = (evt: WadFileEvent, msg?: string) => {
-        addLogWindowMessage(msg ? msg : evt);
-        if (eventListener) {
-            eventListener(evt, msg);
-        }
-    };
+export const initWadInput = (
+	eventListener?: (evt: WadFileEvent, msg?: string) => void,
+): WadFile => {
+	const onWadEvent = (evt: WadFileEvent, msg?: string) => {
+		addLogWindowMessage(msg ? msg : evt);
+		if (eventListener) {
+			eventListener(evt, msg);
+		}
+	};
 
-    wadFile = new WadFile({ debugLog: false, eventListener: onWadEvent, breatheInLog: true });
+	wadFile = new WadFile({
+		debugLog: false,
+		eventListener: onWadEvent,
+		breatheInLog: true,
+	});
 
-    const wadInputElemVisible = document.getElementById('wad-input') as HTMLButtonElement | undefined;
-    const wadInputElemHidden = document.getElementById('wad-input-hidden') as HTMLInputElement | undefined;
-    const onWadInputHidden = async (evt: Event & { target: EventTarget | null }) => {
-        const target = evt.target as HTMLInputElement | undefined;
-        if (target?.files?.length && target.files.length > 0) {
-            clearLogWindow();
-            switchContentModule('log');
-            if (target.files[0].name.endsWith('.zip')) {
-                addLogWindowMessage(`Unzipping ${target.files[0].name}`);
-                const { entries } = await unzip(target.files[0]);
-                await parseZipEntries(entries);
-            } else if (wadFile) {
-                wadFile.loadFile(target.files[0]);
-            }
-        }
-    };
+	const wadInputElemVisible = document.getElementById("wad-input") as
+		| HTMLButtonElement
+		| undefined;
+	const wadInputElemHidden = document.getElementById("wad-input-hidden") as
+		| HTMLInputElement
+		| undefined;
+	const onWadInputHidden = async (
+		evt: Event & { target: EventTarget | null },
+	) => {
+		const target = evt.target as HTMLInputElement | undefined;
+		if (target?.files?.length && target.files.length > 0) {
+			clearLogWindow();
+			switchContentModule("log");
+			if (target.files[0].name.endsWith(".zip")) {
+				addLogWindowMessage(`Unzipping ${target.files[0].name}`);
+				const { entries } = await unzip(target.files[0]);
+				await parseZipEntries(entries);
+			} else if (wadFile) {
+				wadFile.loadFile(target.files[0]);
+			}
+		}
+	};
 
-    const onWadInputVisible = (evt: Event) => {
-        evt.preventDefault();
-        if (wadInputElemHidden) {
-            wadInputElemHidden.click();
-        }
-    };
+	const onWadInputVisible = (evt: Event) => {
+		evt.preventDefault();
+		if (wadInputElemHidden) {
+			wadInputElemHidden.click();
+		}
+	};
 
-    if (wadInputElemVisible && wadInputElemHidden) {
-        wadInputElemHidden.addEventListener('change', onWadInputHidden);
-        wadInputElemVisible.addEventListener('click', onWadInputVisible);
-    }
+	if (wadInputElemVisible && wadInputElemHidden) {
+		wadInputElemHidden.addEventListener("change", onWadInputHidden);
+		wadInputElemVisible.addEventListener("click", onWadInputVisible);
+	}
 
-    const onSelectDoomElem = () => {
-        clearLogWindow();
-        switchContentModule('log');
-        if (wadFile) {
-            wadFile.loadFileFromUrl('./DOOM1.WAD');
-        }
-    };
+	const onSelectDoomElem = () => {
+		clearLogWindow();
+		switchContentModule("log");
+		if (wadFile) {
+			wadFile.loadFileFromUrl("./DOOM1.WAD");
+		}
+	};
 
-    const wadSelectDoomElem = document.getElementById('wad-input-doom') as HTMLButtonElement | null;
-    if (wadSelectDoomElem) {
-        wadSelectDoomElem.addEventListener('click', onSelectDoomElem);
-    }
+	const wadSelectDoomElem = document.getElementById(
+		"wad-input-doom",
+	) as HTMLButtonElement | null;
+	if (wadSelectDoomElem) {
+		wadSelectDoomElem.addEventListener("click", onSelectDoomElem);
+	}
 
-    const wadOpenUrlButton = document.getElementById('wad-input-text-loader') as HTMLButtonElement | null;
-    const wadOpenUrlText = document.getElementById('wad-input-text') as HTMLInputElement | null;
+	const wadOpenUrlButton = document.getElementById(
+		"wad-input-text-loader",
+	) as HTMLButtonElement | null;
+	const wadOpenUrlText = document.getElementById(
+		"wad-input-text",
+	) as HTMLInputElement | null;
 
-    const onSelectOpenUrl = async () => {
-        if (wadOpenUrlText) {
-            const url = wadOpenUrlText.value.trim();
-            if (url) {
-                loadWadUrl(url);
-            } else {
-                addLogWindowMessage('Please input the URL in the text box.');
-            }
-        }
-    };
-    if (wadOpenUrlButton && wadOpenUrlText) {
-        wadOpenUrlButton.addEventListener('click', onSelectOpenUrl);
-        const sParams = new URLSearchParams(window.location.search);
-        const fileParam = sParams.get('file');
-        if (fileParam) {
-            wadOpenUrlText.value = fileParam;
-            window.history.replaceState({}, '', window.location.origin);
-            setTimeout(() => {
-                addLogWindowMessage(
-                    'URL contained a link to a wad/zip file. Click "Load URL" to try fetching ' + fileParam,
-                );
-            }, 100);
-        }
-    }
+	const onSelectOpenUrl = async () => {
+		if (wadOpenUrlText) {
+			const url = wadOpenUrlText.value.trim();
+			if (url) {
+				loadWadUrl(url);
+			} else {
+				addLogWindowMessage("Please input the URL in the text box.");
+			}
+		}
+	};
+	if (wadOpenUrlButton && wadOpenUrlText) {
+		wadOpenUrlButton.addEventListener("click", onSelectOpenUrl);
+		const sParams = new URLSearchParams(window.location.search);
+		const fileParam = sParams.get("file");
+		if (fileParam) {
+			wadOpenUrlText.value = fileParam;
+			window.history.replaceState({}, "", window.location.origin);
+			setTimeout(() => {
+				addLogWindowMessage(
+					`URL contained a link to a wad/zip file. Click "Load URL" to try fetching ${fileParam}`,
+				);
+			}, 100);
+		}
+	}
 
-    const wadBrowseIdgamesElem = document.getElementById('wad-input-idgames') as HTMLButtonElement | null;
-    if (wadBrowseIdgamesElem) {
-        wadBrowseIdgamesElem.addEventListener('click', () => {
-            switchContentModule('exsearch');
-        });
-    }
+	const wadBrowseIdgamesElem = document.getElementById(
+		"wad-input-idgames",
+	) as HTMLButtonElement | null;
+	if (wadBrowseIdgamesElem) {
+		wadBrowseIdgamesElem.addEventListener("click", () => {
+			switchContentModule("exsearch");
+		});
+	}
 
-    return wadFile;
+	return wadFile;
 };
 
 export const loadWadUrl = async (url: string) => {
-    clearLogWindow();
-    switchContentModule('log');
-    addLogWindowMessage(`Trying to load ${url}`);
-    const historyUrl = `${window.location.origin}?file=${encodeURIComponent(url)}`;
-    window.history.replaceState({}, '', historyUrl);
+	clearLogWindow();
+	switchContentModule("log");
+	addLogWindowMessage(`Trying to load ${url}`);
+	const historyUrl = `${window.location.origin}?file=${encodeURIComponent(url)}`;
+	window.history.replaceState({}, "", historyUrl);
 
-    if (
-        url
-            .toLowerCase()
-            .split(/(?=.zip)/g)
-            .pop()
-            ?.startsWith('.zip')
-    ) {
-        try {
-            addLogWindowMessage(`Loading ${url}`);
-            const file = await dlFile(corsProxy + url);
-            if (file) {
-                const { entries } = await unzip(file);
-                await parseZipEntries(entries);
-            }
-        } catch (err) {
-            console.error(err);
-            addLogWindowMessage('Failed to fetch the zip from provided URL.¯\\_(ツ)_/¯');
-        }
-    } else if (
-        url
-            .toLowerCase()
-            .split(/(?=.wad)/g)
-            .pop()
-            ?.startsWith('.wad')
-    ) {
-        const file = await dlFile(corsProxy + url);
-        if (wadFile && file) {
-            wadFile.loadArrayBuffer(file, url);
-        }
-    } else {
-        addLogWindowMessage(
-            'Cannot determine if it is zip or wad from the URL. Or maybe it was not a file at all ¯\\_(ツ)_/¯',
-        );
-    }
+	if (
+		url
+			.toLowerCase()
+			.split(/(?=.zip)/g)
+			.pop()
+			?.startsWith(".zip")
+	) {
+		try {
+			addLogWindowMessage(`Loading ${url}`);
+			const file = await dlFile(corsProxy + url);
+			if (file) {
+				const { entries } = await unzip(file);
+				await parseZipEntries(entries);
+			}
+		} catch (err) {
+			console.error(err);
+			addLogWindowMessage(
+				"Failed to fetch the zip from provided URL.¯\\_(ツ)_/¯",
+			);
+		}
+	} else if (
+		url
+			.toLowerCase()
+			.split(/(?=.wad)/g)
+			.pop()
+			?.startsWith(".wad")
+	) {
+		const file = await dlFile(corsProxy + url);
+		if (wadFile && file) {
+			wadFile.loadArrayBuffer(file, url);
+		}
+	} else {
+		addLogWindowMessage(
+			"Cannot determine if it is zip or wad from the URL. Or maybe it was not a file at all ¯\\_(ツ)_/¯",
+		);
+	}
 };
 
 const parseZipEntries = async (entries: { [key: string]: ZipEntry }) => {
-    const wads = Object.entries(entries).filter((e) => e[0].toLowerCase().endsWith('.wad'));
-    if (wads.length === 0) {
-        addLogWindowMessage('No wad files found in zip');
-        return;
-    }
-    const entry = wads.sort(([, e0], [, e1]) => e1.size - e0.size)[0][1];
-    addLogWindowMessage(`Selecting ${entry.name}`);
-    if (wadFile) {
-        wadFile.loadArrayBuffer(await entry.arrayBuffer(), entry.name);
-    }
+	const wads = Object.entries(entries).filter((e) =>
+		e[0].toLowerCase().endsWith(".wad"),
+	);
+	if (wads.length === 0) {
+		addLogWindowMessage("No wad files found in zip");
+		return;
+	}
+	const entry = wads.sort(([, e0], [, e1]) => e1.size - e0.size)[0][1];
+	addLogWindowMessage(`Selecting ${entry.name}`);
+	if (wadFile) {
+		wadFile.loadArrayBuffer(await entry.arrayBuffer(), entry.name);
+	}
 };
 
 const dlFile = async (url: string): Promise<ArrayBuffer | null> => {
-    const response = await fetch(url);
-    if (!response.body || !response.headers) return null;
+	const response = await fetch(url);
+	if (!response.body || !response.headers) return null;
 
-    const reader = response.body.getReader();
+	const reader = response.body.getReader();
 
-    const len = response.headers.get('Content-Length');
-    const contentLength = len ? +len : 0;
+	const len = response.headers.get("Content-Length");
+	const contentLength = len ? +len : 0;
 
-    let receivedLength = 0;
-    let readerInProgress = true;
-    let firstMsg = true;
-    const chunks = [];
-    while (readerInProgress) {
-        const { done, value } = await reader.read();
+	let receivedLength = 0;
+	let readerInProgress = true;
+	let firstMsg = true;
+	const chunks = [];
+	while (readerInProgress) {
+		const { done, value } = await reader.read();
 
-        if (done) {
-            readerInProgress = false;
-            break;
-        }
-        chunks.push(value);
-        receivedLength += value.length;
+		if (done) {
+			readerInProgress = false;
+			break;
+		}
+		chunks.push(value);
+		receivedLength += value.length;
 
-        addLogWindowMessage(
-            `Received ${receivedLength} of ${contentLength} (${((receivedLength / contentLength) * 100).toFixed(2)}%)`,
-            false,
-            !firstMsg,
-        );
-        firstMsg = false;
-    }
+		addLogWindowMessage(
+			`Received ${receivedLength} of ${contentLength} (${((receivedLength / contentLength) * 100).toFixed(2)}%)`,
+			false,
+			!firstMsg,
+		);
+		firstMsg = false;
+	}
 
-    const chunksAll = new Uint8Array(receivedLength);
-    let position = 0;
-    for (const chunk of chunks) {
-        chunksAll.set(chunk, position);
-        position += chunk.length;
-    }
-    return chunksAll.buffer;
+	const chunksAll = new Uint8Array(receivedLength);
+	let position = 0;
+	for (const chunk of chunks) {
+		chunksAll.set(chunk, position);
+		position += chunk.length;
+	}
+	return chunksAll.buffer;
 };
