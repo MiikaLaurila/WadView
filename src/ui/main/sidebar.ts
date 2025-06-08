@@ -7,13 +7,16 @@ import {
 	type WadHeader,
 	type WadMapGroupList,
 	type WadMapList,
+	type WadMenuGraphic,
+	type WadMusic,
 	type WadPlaypal,
+	type WadSprite,
 	type WadTextures,
 	WadType,
 } from "wadview-lib";
 import { switchContentModule } from "./contentModule";
 
-const pages = ["Metadata", "Colors", "Maps", "Textures"] as const;
+const pages = ["Metadata", "Colors", "Maps", "Textures", "Music"] as const;
 type PageType = (typeof pages)[number];
 let openedGroups: PageType[] = [];
 let eventListenersAdded: PageType[] = [];
@@ -139,7 +142,7 @@ export const initializeSideBarMeta = (
 		});
 	}
 
-	if (dehacked) {
+	if (dehacked?.dehackedString) {
 		createChild(metaSection, "DEHACKED", () => {
 			switchContentModule("dehacked");
 		});
@@ -203,12 +206,17 @@ export const initializeSideBarMaps = (maps: WadMapList) => {
 				switchContentModule("map", { mapName: m.name });
 			});
 		}
+	} else {
+		mapSection.innerHTML = "";
+		mapSection.style.display = "none";
 	}
 };
 
 export const initializeSideBarTextures = (
 	textures: WadTextures | null,
 	flats: WadFlat[] | null,
+	sprites: WadSprite[] | null,
+	menuGraphics: WadMenuGraphic[] | null,
 ) => {
 	const textureSection = document.getElementById("section-textures") as
 		| HTMLDivElement
@@ -243,5 +251,41 @@ export const initializeSideBarTextures = (
 		createChild(textureSection, "FLATS", () => {
 			switchContentModule("flats");
 		});
+	}
+
+	if (sprites && sprites.length > 0) {
+		createChild(textureSection, "SPRITES", () => {
+			switchContentModule("sprites");
+		});
+	}
+
+	if (menuGraphics && menuGraphics.length > 0) {
+		createChild(textureSection, "MENU GRAPHICS", () => {
+			switchContentModule("menuGraphics");
+		});
+	}
+};
+
+export const initializeSideBarMusic = (music: WadMusic[] | null) => {
+	const musicSection = document.getElementById("section-music") as
+		| HTMLDivElement
+		| undefined;
+	if (!musicSection) {
+		return;
+	}
+
+	if (music && music.length > 0) {
+		musicSection.innerHTML = "";
+		musicSection.style.removeProperty("display");
+		removeFromOpened("Music");
+		removeFromEventListenersAdded("Music");
+		createHead(musicSection, "Music");
+
+		createChild(musicSection, "MUSIC", () => {
+			switchContentModule("music");
+		});
+	} else {
+		musicSection.innerHTML = "";
+		musicSection.style.display = "none";
 	}
 };

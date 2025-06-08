@@ -1,0 +1,5 @@
+{
+	"files": {
+		"ignore": ["src/*.js", "static/*.js", "static/eawpats/**/*", "libtimidity*"]
+	}
+}

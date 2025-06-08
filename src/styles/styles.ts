@@ -16,3 +16,6 @@ import "./dehacked.css";
 import "./patches.css";
 import "./flats.css";
 import "./modal.css";
+import "./sprites.css";
+import "./menuGraphics.css";
+import "./music.css";

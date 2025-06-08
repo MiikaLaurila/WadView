@@ -18,6 +18,7 @@ import { getDehacked, getMaps, getNiceFileName } from "../..";
 import { getThingColor } from "../../utilities/thingUtils";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
+import { musicVisibilityState } from "./musicWindow";
 
 interface Dimensions {
 	height: number;
@@ -59,10 +60,21 @@ const paletteOptionId = "map-window-input-palette";
 const canvasPadding = 10;
 const widthOffset = 216;
 const heightOffset = 190;
+const extraMusicOffset = 40;
 
 let maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
-let maxHeight =
-	Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
+const maxHeight = () => {
+	return (
+		Math.min(
+			1080,
+			window.innerHeight -
+				heightOffset -
+				(musicVisibilityState === "minimized" ? extraMusicOffset : 0),
+		) -
+		canvasPadding * 2
+	);
+};
+
 let renderFull = false;
 let mapData: WadMap = defaultWadMap;
 let dehacked: WadDehacked | null = null;
@@ -87,8 +99,6 @@ let selectedPalette: MapWindowPalette = mapPalettes[0];
 
 window.addEventListener("resize", () => {
 	maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
-	maxHeight =
-		Math.min(1080, window.innerHeight - heightOffset) - canvasPadding * 2;
 	if (app && viewport && dim) {
 		clearData();
 		setBounds();
@@ -221,7 +231,8 @@ const setDimensions = (): void => {
 	const mapWidth = bounds.right - bounds.left;
 	const mapHeight = bounds.bottom - bounds.top;
 	let maxW = maxWidth;
-	let maxH = maxHeight;
+	let maxH = maxHeight();
+
 	let scale = 1;
 	if (renderFull) {
 		if (mapWidth < maxResImage && mapHeight < maxResImage) {
@@ -286,6 +297,7 @@ const initializeMap = () => {
 		height: dim.height + canvasPadding * 2,
 		antialias: !renderFull,
 		preserveDrawingBuffer: true,
+		powerPreference: "high-performance",
 	});
 
 	if (viewport) {
@@ -433,7 +445,6 @@ const drawLines = (graphy: Graphics) => {
 		});
 		for (const line of sortedLineDefs) {
 			if (automapMode && !shouldBeDrawnOnAutomap(line)) {
-				console.log(line);
 				continue;
 			}
 
@@ -490,20 +501,28 @@ const drawTriangle = (
 	rotation: number,
 ): [Point, Point, Point] => {
 	const rot = (-rotation * Math.PI) / 180 + Math.PI / 2;
-	const height = Math.sin((90 * Math.PI) / 180) * size;
-	const width = size;
+
+	const cosRot = Math.cos(rot);
+	const sinRot = Math.sin(rot);
+
+	const halfSize = size / 2;
+
+	const widthCos = halfSize * cosRot;
+	const widthSin = halfSize * sinRot;
+	const heightSin = halfSize * sinRot;
+	const heightCos = halfSize * cosRot;
 
 	const v1 = {
-		x: centerX - (width / 2) * Math.cos(rot) - (height / 2) * Math.sin(rot),
-		y: centerY - (width / 2) * Math.sin(rot) + (height / 2) * Math.cos(rot),
+		x: centerX - widthCos - heightSin,
+		y: centerY - widthSin + heightCos,
 	};
 	const v2 = {
-		x: centerX + (width / 2) * Math.cos(rot) - (height / 2) * Math.sin(rot),
-		y: centerY + (width / 2) * Math.sin(rot) + (height / 2) * Math.cos(rot),
+		x: centerX + widthCos - heightSin,
+		y: centerY + widthSin + heightCos,
 	};
 	const v3 = {
-		x: centerX + (height / 2) * Math.sin(rot),
-		y: centerY - (height / 2) * Math.cos(rot),
+		x: centerX + heightSin,
+		y: centerY - heightCos,
 	};
 
 	graphy.drawPolygon(v1, v2, v3);
@@ -520,7 +539,7 @@ const applyDehacked = (things: WadMapThing[]): WadMapThingDehacked[] => {
 
 	return things.map((thing) => {
 		if (!dehacked) return thing;
-		const dehackedThing = dehacked.things.find(
+		const dehackedThing = dehacked.thingTranslations.find(
 			(dt) => dt.from === thing.thingType,
 		);
 		if (!dehackedThing) return thing;
@@ -726,7 +745,7 @@ const drawHover = (data: HoverData) => {
 	if (!parent) return;
 	let cumulativeHeight = 0;
 	const rowHeight = 13;
-	const width = 220;
+	const width = 250;
 
 	data.things.forEach((t, idx) => {
 		const flagRoom = t.flagsString.length * rowHeight;
@@ -974,7 +993,8 @@ const getToggleArea = (mapName: string) => {
 					enabledThingGroups = [];
 				} else {
 					enabledThingGroups = Object.keys(WadMapThingGroup).filter(
-						(k) => k !== WadMapThingGroup.UNKNOWN,
+						(k) =>
+							k !== WadMapThingGroup.UNKNOWN && k !== WadMapThingGroup.SPECIAL,
 					) as WadMapThingGroup[];
 				}
 			} else if (toggle === "DECO") {

@@ -14,9 +14,15 @@ import {
 	disposeMapWindowModule,
 	initMapWindowModule,
 } from "../windows/mapWindow";
+import { initMenuGraphicsModule } from "../windows/menuGraphicsWindow";
+import { initMusicModule, minimizeMusic } from "../windows/musicWindow";
 import { initNotReadyWindowModule } from "../windows/notreadyWindow";
 import { initPatchesWindowModule } from "../windows/patchesWindow";
 import { initPlaypalWindowModule } from "../windows/playpalWindow";
+import {
+	disposeSpritesWindowModule,
+	initSpritesWindowModule,
+} from "../windows/spritesWindow";
 
 //prettier-ignore
 export const contentModule = [
@@ -32,7 +38,10 @@ export const contentModule = [
 	"exsearch",
 	"dehacked",
 	"patches",
-	"flats"
+	"flats",
+	"sprites",
+	"menuGraphics",
+	"music",
 ] as const;
 export type ContentModuleType = (typeof contentModule)[number];
 
@@ -42,7 +51,7 @@ export interface ModuleOptions {
 	mapName?: string;
 }
 
-export const createModule = (id: ContentModuleType) => {
+export const disposeModules = () => {
 	const existingModules = document.getElementsByClassName("module");
 	if (existingModules.length > 0) {
 		for (const m of Array.from(existingModules)) {
@@ -53,10 +62,20 @@ export const createModule = (id: ContentModuleType) => {
 			if (id === "endoom") {
 				disposeEndoomModule();
 			}
-			m.parentElement?.removeChild(m);
+			if (id === "sprites") {
+				disposeSpritesWindowModule();
+			}
+			if (id === "music") {
+				minimizeMusic();
+			} else {
+				m.parentElement?.removeChild(m);
+			}
 		}
 	}
+};
 
+export const createModule = (id: ContentModuleType) => {
+	disposeModules();
 	const mod = document.createElement("div");
 	mod.id = id;
 	mod.classList.add("module");
@@ -111,6 +130,15 @@ export const switchContentModule = (
 			break;
 		case "flats":
 			initFlatsWindowModule();
+			break;
+		case "sprites":
+			initSpritesWindowModule();
+			break;
+		case "menuGraphics":
+			initMenuGraphicsModule();
+			break;
+		case "music":
+			initMusicModule();
 			break;
 		case "notImplemented":
 			initNotReadyWindowModule();

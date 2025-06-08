@@ -24,8 +24,8 @@ export const initLogWindowModule = () => {
 		if (tempLog) tempLog.innerHTML = "";
 	};
 	clearButton.innerText = "Clear Log";
-
 	logWindow.appendChild(clearButton);
+
 	setTopBarPageName("Log");
 	for (const l of logMessages) {
 		addLogWindowMessage(l, true);

@@ -1,3 +1,8 @@
+import { Buffer } from "buffer";
+
+// @ts-ignore
+window.Buffer = Buffer;
+
 import {
 	type WadColorMap,
 	type WadDehacked,
@@ -8,22 +13,28 @@ import {
 	type WadHeader,
 	type WadMapGroupList,
 	type WadMapList,
+	type WadMenuGraphic,
+	type WadMusic,
 	type WadPlaypal,
+	type WadSprite,
 	type WadTextures,
 	defaultPlaypal,
+	defaultWadDehacked,
 	defaultWadHeader,
 } from "wadview-lib";
 import "./styles/styles";
-import { initContentModule } from "./ui/main/contentModule";
+import { disposeModules, initContentModule } from "./ui/main/contentModule";
 import {
 	initializeSideBarColors,
 	initializeSideBarMaps,
 	initializeSideBarMeta,
+	initializeSideBarMusic,
 	initializeSideBarTextures,
 } from "./ui/main/sidebar";
 import { setTopBarFileName } from "./ui/main/topbar";
 import { initWadInput } from "./ui/main/wadInput";
 import { addLogWindowMessage } from "./ui/windows/logWindow";
+import { closeMusic } from "./ui/windows/musicWindow";
 
 let header: WadHeader = defaultWadHeader;
 let directory: WadDirectory = [];
@@ -35,9 +46,13 @@ let endoom: WadEndoom = [];
 let dehacked: WadDehacked | null = null;
 let textures: WadTextures | null = null;
 let flats: WadFlat[] | null = null;
+let sprites: WadSprite[] | null = null;
+let menuGraphics: WadMenuGraphic[] | null = null;
+let music: WadMusic[] | null = null;
 let niceFileName = "";
 
 const resetParsed = () => {
+	closeMusic();
 	header = defaultWadHeader;
 	directory = [];
 	mapGroups = [];
@@ -46,6 +61,10 @@ const resetParsed = () => {
 	colormap = [];
 	endoom = [];
 	flats = [];
+	sprites = [];
+	menuGraphics = [];
+	music = [];
+	dehacked = defaultWadDehacked;
 };
 
 export const getHeader = () => header;
@@ -59,6 +78,9 @@ export const getDehacked = () => dehacked;
 export const getTextures = () => textures;
 export const getNiceFileName = () => niceFileName;
 export const getFlats = () => flats;
+export const getSprites = () => sprites;
+export const getMenuGraphics = () => menuGraphics;
+export const getMusic = () => music;
 
 const loadWholeWad = async () => {
 	resetParsed();
@@ -113,6 +135,21 @@ const loadWholeWad = async () => {
 		flats = tempFlats;
 	}
 
+	const tempSprites = await wadFile.sprites();
+	if (tempSprites) {
+		sprites = tempSprites;
+	}
+
+	const tempMenuGraphics = await wadFile.menuGraphics();
+	if (tempMenuGraphics) {
+		menuGraphics = tempMenuGraphics;
+	}
+
+	const tempMusic = await wadFile.music();
+	if (tempMusic) {
+		music = tempMusic;
+	}
+
 	addLogWindowMessage(`${wadFile.fileUrl} loaded into memory`);
 	onWadFileEvent(WadFileEvent.LOADING_READY);
 	niceFileName = wadFile.niceFileName;
@@ -126,7 +163,8 @@ const onWadFileEvent = (evt: WadFileEvent) => {
 		initializeSideBarMeta(header, directory, mapGroups, endoom, dehacked);
 		initializeSideBarColors(playpal, colormap);
 		initializeSideBarMaps(maps);
-		initializeSideBarTextures(textures, flats);
+		initializeSideBarTextures(textures, flats, sprites, menuGraphics);
+		initializeSideBarMusic(music);
 	}
 };
 
