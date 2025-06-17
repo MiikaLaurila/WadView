@@ -10,6 +10,7 @@ import {
 	type WadMapLinedef,
 	type WadMapThing,
 	type WadMapThingDehacked,
+	type WadMapThingFlagType,
 	WadMapThingGroup,
 	defaultWadMap,
 	mapPalettes,
@@ -136,7 +137,7 @@ export const initMapWindowModule = (mapName: string) => {
 
 	const mapCanvas = document.createElement("canvas");
 	mapCanvas.id = mapWindowCanvasId;
-	mapCanvas.getContext("webgl", { preserveDrawingBuffer: true });
+	mapCanvas.getContext("webgl", { preserveDrawingBuffer: true, stencil: true });
 	mapCanvas.addEventListener("mousemove", onCanvasMouseMove);
 	mapWindow.appendChild(mapCanvas);
 
@@ -297,7 +298,6 @@ const initializeMap = () => {
 		height: dim.height + canvasPadding * 2,
 		antialias: !renderFull,
 		preserveDrawingBuffer: true,
-		powerPreference: "high-performance",
 	});
 
 	if (viewport) {
@@ -744,12 +744,30 @@ const drawHover = (data: HoverData) => {
 	const parent = document.getElementById("map");
 	if (!parent) return;
 	let cumulativeHeight = 0;
-	const rowHeight = 13;
+	const rowHeight = 11;
 	const width = 250;
 
+	const flagToStr = (flags: WadMapThingFlagType[]): string => {
+		return flags
+			.map((f) => {
+				switch (f) {
+					case "ON_SKILL_EASY":
+						return "EASY";
+					case "ON_SKILL_MEDIUM":
+						return "MED";
+					case "ON_SKILL_HARD":
+						return "HARD";
+					case "AMBUSH":
+						return "AMB";
+					case "NET_ONLY":
+						return "NET";
+				}
+			})
+			.join("+");
+	};
+
 	data.things.forEach((t, idx) => {
-		const flagRoom = t.flagsString.length * rowHeight;
-		const height = 4 * rowHeight + flagRoom;
+		const height = 5 * rowHeight;
 		cumulativeHeight += height + 5;
 		const top = data.y - 10 - cumulativeHeight - window.scrollY;
 		let left = data.x - 90;
@@ -761,7 +779,7 @@ const drawHover = (data: HoverData) => {
 
 		const hoverDiv = document.createElement("div");
 		hoverDiv.classList.add("map-hover-div");
-		hoverDiv.style.top = `${idx < 3 ? top : data.y - 85 - flagRoom}px`;
+		hoverDiv.style.top = `${idx < 3 ? top : data.y - 85}px`;
 		hoverDiv.style.left = `${left}px`;
 		hoverDiv.style.width = `${width}px`;
 		hoverDiv.style.height = `${height}px`;
@@ -772,12 +790,7 @@ const drawHover = (data: HoverData) => {
 		hoverDiv.appendChild(
 			getHoverRow("POS: ", `(${t.x},${t.y}) | ${t.angle} | ${t.size}`),
 		);
-		hoverDiv.appendChild(
-			getHoverRow(
-				"FLAGS:",
-				`${t.flagsString.map((f) => `<br/><span>${f}</span>`).join("\n")}`,
-			),
-		);
+		hoverDiv.appendChild(getHoverRow("FLAGS: ", flagToStr(t.flagsString)));
 		parent.appendChild(hoverDiv);
 		hoverDivs.push(hoverDiv);
 	});
