@@ -3,7 +3,7 @@
 	flex-wrap: wrap;
 }
 .dir-container > div {
-	width: 350px;
+	width: 510px;
 	border: 1px solid black;
 	margin: 8px;
 }
@@ -24,11 +24,17 @@
 	width: 50px;
 }
 .dir-container > div > div > div:nth-of-type(2) {
-	width: 100px;
+	width: 90px;
 }
 .dir-container > div > div > div:nth-of-type(3) {
-	width: 100px;
+	width: 75px;
 }
 .dir-container > div > div > div:nth-of-type(4) {
-	width: 100px;
+	width: 60px;
+}
+.dir-container > div > div > div:nth-of-type(5) {
+	width: 110px;
+}
+.dir-container > div > div > div:nth-of-type(6) {
+	width: 75px;
 }

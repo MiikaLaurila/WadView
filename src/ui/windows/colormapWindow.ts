@@ -1,5 +1,5 @@
-import type { WadPlaypalTypedEntry } from "wadview-lib";
-import { getColormap, getPlaypal } from "../..";
+import { preFilledPlaypal, type WadPlaypalTypedEntry } from "wadview-lib";
+import { getColormaps, getPlaypals } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 
@@ -11,8 +11,8 @@ export const initColormapWindowModule = () => {
 	colormapWindow.id = colormapWindowId;
 	baseModule.appendChild(colormapWindow);
 	setTopBarPageName("ColorMap");
-	const colormap = getColormap();
-	const playpal = getPlaypal();
+	const colormap = getColormaps()[0].data;
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (colormap && playpal) {
 		for (const e of playpal.typedPlaypal) {
 			createColormapEntry(colormapWindow, colormap, e);

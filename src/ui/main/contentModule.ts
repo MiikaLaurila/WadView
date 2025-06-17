@@ -1,3 +1,4 @@
+import { initAttributionsWindow } from "../windows/attributionsWindow";
 import { initColormapWindowModule } from "../windows/colormapWindow";
 import { initDehackedWindowModule } from "../windows/dehackedWindow";
 import { initDirectoryWindowModule } from "../windows/directoryWindow";
@@ -23,6 +24,7 @@ import {
 	disposeSpritesWindowModule,
 	initSpritesWindowModule,
 } from "../windows/spritesWindow";
+import { initStbarGraphicsModule } from "../windows/stbarGraphicsWindow";
 
 //prettier-ignore
 export const contentModule = [
@@ -41,7 +43,9 @@ export const contentModule = [
 	"flats",
 	"sprites",
 	"menuGraphics",
+	"stbarGraphics",
 	"music",
+	"attributions",
 ] as const;
 export type ContentModuleType = (typeof contentModule)[number];
 
@@ -137,8 +141,14 @@ export const switchContentModule = (
 		case "menuGraphics":
 			initMenuGraphicsModule();
 			break;
+		case "stbarGraphics":
+			initStbarGraphicsModule();
+			break;
 		case "music":
 			initMusicModule();
+			break;
+		case "attributions":
+			initAttributionsWindow();
 			break;
 		case "notImplemented":
 			initNotReadyWindowModule();

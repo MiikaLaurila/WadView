@@ -1,5 +1,9 @@
-import type { WadPlaypalColor, WadPlaypalTypedEntry } from "wadview-lib";
-import { getPlaypal } from "../..";
+import {
+	preFilledPlaypal,
+	type WadPlaypalColor,
+	type WadPlaypalTypedEntry,
+} from "wadview-lib";
+import { getPlaypals } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 const playpalWindowId = "playpal-window";
@@ -10,7 +14,7 @@ export const initPlaypalWindowModule = () => {
 	playpalWindow.id = playpalWindowId;
 	baseModule.appendChild(playpalWindow);
 	setTopBarPageName("PlayPal");
-	const playPal = getPlaypal();
+	const playPal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (playPal) {
 		for (const e of playPal.typedPlaypal) {
 			createPlayPalEntry(playpalWindow, e);

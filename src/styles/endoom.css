@@ -3,17 +3,7 @@
 	height: 400px;
 }
 
-#endoom-window-container > div {
-	display: inline-block;
-	position: relative;
-	margin-top: -2px;
-	height: 16px;
-	width: 8px;
-}
-
-#endoom-window-container > div > span {
-	position: absolute;
-	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
-	font-family: "DOS";
-	font-size: 16px;
+#endoom-window-container > canvas {
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
 }

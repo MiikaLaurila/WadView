@@ -19,5 +19,5 @@
   // Folder for your code
   "include": [
       "./src/**/*"
-, "static/midiAudioProcessor.js"  ]
+, "static/midiAudioProcessor.js", "static/mod-player-worklet.js"  ]
 }

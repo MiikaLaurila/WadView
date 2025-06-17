@@ -1,16 +1,20 @@
-import type { WadEndoom } from "wadview-lib";
-import { getEndoom } from "../..";
+import type { WadEndoom, WadFileInfo } from "wadview-lib";
+import { getEndooms } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 
 const containerId = "endoom-window-container";
-const endoomBlockClass = "endoom-block";
 
-let endoom: WadEndoom = [];
-let blinkCycle: number | null = null;
+let endooms: WadFileInfo<WadEndoom>[] = [];
+let blinkCycles: number[] = [];
+let blinkPhase: "on" | "off" = "on";
+const scale = 1;
+const charW = 8 * scale;
+const charH = 16 * scale;
+const fontSize = 16 * scale;
 export const initEndoomWindowModule = () => {
 	setTopBarPageName("Endoom");
-	endoom = getEndoom();
+	endooms = getEndooms();
 
 	const baseModule = createModule("endoom");
 
@@ -18,51 +22,62 @@ export const initEndoomWindowModule = () => {
 	container.id = containerId;
 	baseModule.appendChild(container);
 
-	endoom.forEach((c, idx) => {
-		const block = document.createElement("div");
-		block.style.backgroundColor = c.backgroundColor;
-		block.style.color = c.foregroundColor;
-		block.setAttribute("blink", c.blink ? "1" : "0");
-		block.setAttribute("blink-phase", "0");
-		block.setAttribute("fg", c.foregroundColor);
-		block.setAttribute("bg", c.backgroundColor);
-		block.className = endoomBlockClass;
-		const txt = document.createElement("span");
-		txt.innerText = c.char;
-		block.appendChild(txt);
-		container.appendChild(block);
-		if ((idx + 1) % 80 === 0)
-			container.appendChild(document.createElement("br"));
-	});
+	for (const endoom of endooms) {
+		const endoomCanvas = document.createElement("canvas");
+		endoomCanvas.width = 640;
+		endoomCanvas.height = 400;
 
-	if (blinkCycle === null) {
-		blinkCycle = window.setInterval(() => {
-			const blocks = document.getElementsByClassName(
-				endoomBlockClass,
-			) as HTMLCollectionOf<HTMLDivElement>;
-			for (const block of Array.from(blocks)) {
-				const blink = block.getAttribute("blink");
-				if (blink !== "1") continue;
-				const blinkPhase = block.getAttribute("blink-phase");
-				const fgColor = block.getAttribute("fg");
-				const bgColor = block.getAttribute("bg");
-				if (bgColor && fgColor) {
-					if (blinkPhase === "0") {
-						block.style.color = bgColor;
-						block.setAttribute("blink-phase", "1");
-					} else {
-						block.style.color = fgColor;
-						block.setAttribute("blink-phase", "0");
-					}
+		const ctx = endoomCanvas.getContext("2d");
+		if (!ctx) return;
+		ctx.imageSmoothingEnabled = false;
+		ctx.textRendering = "geometricPrecision";
+		ctx.font = `lighter ${fontSize}px DOS`;
+		ctx.textBaseline = "bottom";
+
+		const w = charW;
+		const h = charH;
+
+		const drawCanvas = (blinkPhase: "on" | "off") => {
+			endoom.data.forEach((c, idx) => {
+				const col = idx % 80;
+				const row = Math.floor(idx / 80);
+				const x = col * w;
+				const y = (row + 1) * h;
+
+				ctx.fillStyle = c.backgroundColor;
+				ctx.fillRect(x, row * h, w, h);
+			});
+			endoom.data.forEach((c, idx) => {
+				const col = idx % 80;
+				const row = Math.floor(idx / 80);
+				const x = col * w;
+				const y = (row + 1) * h;
+				if (c.blink && blinkPhase === "off") {
+					ctx.fillStyle = c.backgroundColor;
+				} else {
+					ctx.fillStyle = c.foregroundColor;
 				}
-			}
-		}, 250);
+				ctx.fillText(c.char, x, y);
+			});
+		};
+
+		drawCanvas(blinkPhase);
+
+		blinkCycles.push(
+			window.setInterval(() => {
+				if (blinkPhase === "on") blinkPhase = "off";
+				else blinkPhase = "on";
+				drawCanvas(blinkPhase);
+			}, 1000),
+		);
+
+		container.appendChild(endoomCanvas);
 	}
 };
 
 export const disposeEndoomModule = () => {
-	if (blinkCycle !== null) {
-		clearInterval(blinkCycle);
-		blinkCycle = null;
+	for (const c of blinkCycles) {
+		clearInterval(c);
 	}
+	blinkCycles = [];
 };

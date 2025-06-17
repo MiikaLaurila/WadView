@@ -1,10 +1,15 @@
-import type { WadMenuGraphic, WadPatch } from "wadview-lib";
-import { getMenuGraphics, getPlaypal } from "../..";
+import {
+	preFilledPlaypal,
+	type WadMenuGraphic,
+	type WadPatch,
+} from "wadview-lib";
+import { getMenuGraphics, getPlaypals } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 import { createModal } from "../other/modal";
 
 const containerId = "menu-graphics-window-container";
+const containerClass = "menu-graphics-container";
 const splitContainerClass = "menu-graphics-split-container";
 const dataContainerClass = "menu-graphics-data-container";
 const canvasContainerClass = "menu-graphics-canvas-container";
@@ -12,7 +17,7 @@ const canvasContainerClass = "menu-graphics-canvas-container";
 let menuGraphics: WadMenuGraphic[];
 
 const writePatchToImageData = (patch: WadPatch, imageData: ImageData) => {
-	const playpal = getPlaypal();
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (!playpal) {
 		console.log("no playpal to draw patch with");
 		return;
@@ -91,7 +96,7 @@ export const initMenuGraphicsModule = () => {
 
 	const container = document.createElement("div");
 	container.id = containerId;
-	container.classList.add("menu-graphics-container");
+	container.classList.add(containerClass);
 	baseModule.appendChild(container);
 
 	const sortedMenuGraphics = [...menuGraphics].sort((a, b) =>

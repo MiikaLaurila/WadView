@@ -1,14 +1,14 @@
-import type { WadHeader } from "wadview-lib";
-import { getHeader } from "../..";
+import type { WadFileInfo, WadHeader } from "wadview-lib";
+import { getHeaders } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 
 const containerId = "header-window-container";
 
-let header: WadHeader | null = null;
+let headers: WadFileInfo<WadHeader>[] | null = null;
 export const initHeaderWindowModule = () => {
 	setTopBarPageName("Header");
-	header = getHeader();
+	headers = getHeaders();
 
 	const baseModule = createModule("header");
 
@@ -27,13 +27,16 @@ export const initHeaderWindowModule = () => {
 		return holder;
 	};
 
-	if (header) {
-		container.appendChild(createRow("Wad Type: ", header.type));
-		container.appendChild(
-			createRow("Directory Entries: ", header.directoryEntryCount.toString()),
-		);
-		container.appendChild(
-			createRow("Directory Offset: ", header.directoryLocation.toString()),
-		);
+	if (headers.length > 0) {
+		for (const header of headers) {
+			container.appendChild(createRow("Wad Name: ", header.wadFileName));
+			container.appendChild(createRow("Wad Type: ", header.type));
+			container.appendChild(
+				createRow("Directory Entries: ", header.directoryEntryCount.toString()),
+			);
+			container.appendChild(
+				createRow("Directory Offset: ", header.directoryLocation.toString()),
+			);
+		}
 	}
 };

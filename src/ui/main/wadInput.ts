@@ -36,10 +36,10 @@ export const initWadInput = (
 		if (target?.files?.length && target.files.length > 0) {
 			clearLogWindow();
 			switchContentModule("log");
-			if (target.files[0].name.endsWith(".zip")) {
+			if (target.files[0].name.toLowerCase().endsWith(".zip")) {
 				addLogWindowMessage(`Unzipping ${target.files[0].name}`);
 				const { entries } = await unzip(target.files[0]);
-				await parseZipEntries(entries);
+				await parseZipEntries(entries, target.files[0].name);
 			} else if (wadFile) {
 				wadFile.loadFile(target.files[0]);
 			}
@@ -136,7 +136,7 @@ export const loadWadUrl = async (url: string) => {
 			const file = await dlFile(corsProxy + url);
 			if (file) {
 				const { entries } = await unzip(file);
-				await parseZipEntries(entries);
+				await parseZipEntries(entries, url.split("/").pop() || "unknown");
 			}
 		} catch (err) {
 			console.error(err);
@@ -162,18 +162,42 @@ export const loadWadUrl = async (url: string) => {
 	}
 };
 
-const parseZipEntries = async (entries: { [key: string]: ZipEntry }) => {
+const parseZipEntries = async (
+	entries: { [key: string]: ZipEntry },
+	zipName: string,
+) => {
 	const wads = Object.entries(entries).filter((e) =>
 		e[0].toLowerCase().endsWith(".wad"),
+	);
+	const deh = Object.entries(entries).filter((e) =>
+		e[0].toLowerCase().endsWith(".deh"),
 	);
 	if (wads.length === 0) {
 		addLogWindowMessage("No wad files found in zip");
 		return;
 	}
-	const entry = wads.sort(([, e0], [, e1]) => e1.size - e0.size)[0][1];
-	addLogWindowMessage(`Selecting ${entry.name}`);
+	const sortedEntries = wads
+		.sort(([, e0], [, e1]) => e1.size - e0.size)
+		.map((e) => e[1]);
+	let dehFile: ZipEntry | null = null;
+	if (deh.length > 0) {
+		dehFile = deh[0][1];
+	}
+	addLogWindowMessage(
+		`Selecting ${sortedEntries.map((e) => e.name).join(", ")} ${dehFile ? ` and external DEH file ${dehFile.name}` : ""}`,
+	);
 	if (wadFile) {
-		wadFile.loadArrayBuffer(await entry.arrayBuffer(), entry.name);
+		const buffers: ArrayBuffer[] = [];
+		const names: string[] = [];
+		for (const e of sortedEntries) {
+			buffers.push(await e.arrayBuffer());
+		}
+		names.push(...sortedEntries.map((e) => e.name));
+		if (dehFile) {
+			buffers.push(await dehFile.arrayBuffer());
+			names.push(dehFile.name);
+		}
+		wadFile.loadArrayBuffers(buffers, names, zipName);
 	}
 };
 

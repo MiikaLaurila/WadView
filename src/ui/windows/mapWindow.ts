@@ -861,6 +861,24 @@ const getButtonArea = (mapName: string) => {
 		initMapWindowModule(mapName);
 	};
 	upperButtons.appendChild(resetButton);
+	const dlButton = document.createElement("button");
+	dlButton.innerText = "Export";
+	dlButton.onclick = () => {
+		const element = document.createElement("a");
+		element.setAttribute(
+			"href",
+			`data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(mapData))}`,
+		);
+		element.setAttribute("download", `${mapData.name}.json`);
+
+		element.style.display = "none";
+		document.body.appendChild(element);
+
+		element.click();
+
+		document.body.removeChild(element);
+	};
+	upperButtons.appendChild(dlButton);
 
 	const maxResParent = document.createElement("div");
 	const maxRes = document.createElement("input");

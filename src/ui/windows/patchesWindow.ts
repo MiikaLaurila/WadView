@@ -1,10 +1,11 @@
-import type {
-	WadPatch,
-	WadTexture,
-	WadTexturePatch,
-	WadTextures,
+import {
+	preFilledPlaypal,
+	type WadPatch,
+	type WadTexture,
+	type WadTexturePatch,
+	type WadTextures,
 } from "wadview-lib";
-import { getPlaypal, getTextures } from "../..";
+import { getPlaypals, getTextures } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 import { createModal } from "../other/modal";
@@ -19,7 +20,7 @@ const textureCellText = "patches-texture-cell";
 let textures: WadTextures;
 
 const writePatchToImageData = (patch: WadPatch, imageData: ImageData) => {
-	const playpal = getPlaypal();
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (!playpal) {
 		console.log("no playpal to draw patch with");
 		return;
@@ -47,7 +48,7 @@ const writePatchToTextureImageData = (
 	texture: WadTexture,
 	texturePatch: WadTexturePatch,
 ) => {
-	const playpal = getPlaypal();
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (!playpal) {
 		console.log("no playpal to draw patch with");
 		return;

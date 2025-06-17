@@ -6,9 +6,10 @@ window.Buffer = Buffer;
 import {
 	type WadColorMap,
 	type WadDehacked,
-	type WadDirectory,
+	type WadDirectoryEntry,
 	type WadEndoom,
 	WadFileEvent,
+	type WadFileInfo,
 	type WadFlat,
 	type WadHeader,
 	type WadMapGroupList,
@@ -17,82 +18,92 @@ import {
 	type WadMusic,
 	type WadPlaypal,
 	type WadSprite,
+	type WadStbarGraphic,
 	type WadTextures,
-	defaultPlaypal,
 	defaultWadDehacked,
 	defaultWadHeader,
+	preFilledPlaypal,
 } from "wadview-lib";
 import "./styles/styles";
-import { disposeModules, initContentModule } from "./ui/main/contentModule";
+import { initContentModule } from "./ui/main/contentModule";
 import {
 	initializeSideBarColors,
 	initializeSideBarMaps,
 	initializeSideBarMeta,
 	initializeSideBarMusic,
 	initializeSideBarTextures,
+	initializeSideBarAttributions,
+	initializeSideBarMisc,
 } from "./ui/main/sidebar";
 import { setTopBarFileName } from "./ui/main/topbar";
 import { initWadInput } from "./ui/main/wadInput";
 import { addLogWindowMessage } from "./ui/windows/logWindow";
 import { closeMusic } from "./ui/windows/musicWindow";
 
-let header: WadHeader = defaultWadHeader;
-let directory: WadDirectory = [];
+let headers: WadFileInfo<WadHeader>[] = [
+	{ ...defaultWadHeader, wadFileName: "default", wadIdx: 0 },
+];
+let directories: WadFileInfo<WadDirectoryEntry>[] = [];
 let mapGroups: WadMapGroupList = [];
 let maps: WadMapList = [];
-let playpal: WadPlaypal = defaultPlaypal;
-let colormap: WadColorMap = [];
-let endoom: WadEndoom = [];
+let playpals: WadFileInfo<WadPlaypal>[] = [
+	{ ...preFilledPlaypal, wadFileName: "default", wadIdx: 0 },
+];
+let colormaps: WadFileInfo<WadColorMap>[] = [];
+let endooms: WadFileInfo<WadEndoom>[] = [];
 let dehacked: WadDehacked | null = null;
 let textures: WadTextures | null = null;
 let flats: WadFlat[] | null = null;
 let sprites: WadSprite[] | null = null;
 let menuGraphics: WadMenuGraphic[] | null = null;
+let stbarGraphics: WadStbarGraphic[] | null = null;
 let music: WadMusic[] | null = null;
 let niceFileName = "";
 
 const resetParsed = () => {
 	closeMusic();
-	header = defaultWadHeader;
-	directory = [];
+	headers = [{ ...defaultWadHeader, wadFileName: "default", wadIdx: 0 }];
+	directories = [];
 	mapGroups = [];
 	maps = [];
-	playpal = defaultPlaypal;
-	colormap = [];
-	endoom = [];
+	playpals = [{ ...preFilledPlaypal, wadFileName: "default", wadIdx: 0 }];
+	colormaps = [];
+	endooms = [];
 	flats = [];
 	sprites = [];
 	menuGraphics = [];
 	music = [];
+	stbarGraphics = [];
 	dehacked = defaultWadDehacked;
 };
 
-export const getHeader = () => header;
-export const getDirectory = () => directory;
+export const getHeaders = () => headers;
+export const getDirectories = () => directories;
 export const getMapGroups = () => mapGroups;
 export const getMaps = () => maps;
-export const getPlaypal = () => playpal;
-export const getColormap = () => colormap;
-export const getEndoom = () => endoom;
+export const getPlaypals = () => playpals;
+export const getColormaps = () => colormaps;
+export const getEndooms = () => endooms;
 export const getDehacked = () => dehacked;
 export const getTextures = () => textures;
 export const getNiceFileName = () => niceFileName;
 export const getFlats = () => flats;
 export const getSprites = () => sprites;
 export const getMenuGraphics = () => menuGraphics;
+export const getStbarGraphics = () => stbarGraphics;
 export const getMusic = () => music;
 
 const loadWholeWad = async () => {
 	resetParsed();
 
-	const tempHeader = await wadFile.header();
-	if (tempHeader) {
-		header = tempHeader;
+	const tempHeaders = await wadFile.header();
+	if (tempHeaders) {
+		headers = tempHeaders;
 	} else return;
 
-	const tempDirectory = await wadFile.directory();
-	if (tempDirectory) {
-		directory = tempDirectory;
+	const tempDirectories = await wadFile.directory();
+	if (tempDirectories) {
+		directories = tempDirectories;
 	}
 
 	const tempMapGroups = await wadFile.mapGroups();
@@ -105,19 +116,19 @@ const loadWholeWad = async () => {
 		maps = tempMaps;
 	}
 
-	const tempPlaypal = await wadFile.playpal();
-	if (tempPlaypal) {
-		playpal = tempPlaypal;
+	const tempPlaypals = await wadFile.playpal();
+	if (tempPlaypals) {
+		playpals = tempPlaypals;
 	}
 
-	const tempColormap = await wadFile.colormap();
-	if (tempColormap) {
-		colormap = tempColormap;
+	const tempColormaps = await wadFile.colormap();
+	if (tempColormaps) {
+		colormaps = tempColormaps;
 	}
 
-	const tempEndoom = await wadFile.endoom();
-	if (tempEndoom) {
-		endoom = tempEndoom;
+	const tempEndooms = await wadFile.endoom();
+	if (tempEndooms) {
+		endooms = tempEndooms;
 	}
 
 	const tempDehacked = await wadFile.dehacked();
@@ -145,28 +156,46 @@ const loadWholeWad = async () => {
 		menuGraphics = tempMenuGraphics;
 	}
 
+	const tempStbarGraphics = await wadFile.stbarGraphics();
+	if (tempStbarGraphics) {
+		stbarGraphics = tempStbarGraphics;
+	}
+
 	const tempMusic = await wadFile.music();
 	if (tempMusic) {
 		music = tempMusic;
 	}
 
-	addLogWindowMessage(`${wadFile.fileUrl} loaded into memory`);
+	addLogWindowMessage(`${wadFile.fileUrls.join(", ")} loaded into memory`);
 	onWadFileEvent(WadFileEvent.LOADING_READY);
-	niceFileName = wadFile.niceFileName;
-	setTopBarFileName(wadFile.niceFileName);
+	niceFileName = (() => {
+		if (wadFile.niceFileNames.length > 1) {
+			return `${wadFile.wadName}`;
+		}
+		return wadFile.niceFileNames[0];
+	})();
+	setTopBarFileName(niceFileName);
 };
 
 const onWadFileEvent = (evt: WadFileEvent) => {
 	if (evt === WadFileEvent.FILE_LOADED) {
 		void loadWholeWad();
 	} else if (evt === WadFileEvent.LOADING_READY) {
-		initializeSideBarMeta(header, directory, mapGroups, endoom, dehacked);
-		initializeSideBarColors(playpal, colormap);
+		initializeSideBarMeta(headers, directories, mapGroups);
+		initializeSideBarMisc(endooms, dehacked);
+		initializeSideBarColors(playpals, colormaps);
 		initializeSideBarMaps(maps);
-		initializeSideBarTextures(textures, flats, sprites, menuGraphics);
+		initializeSideBarTextures(
+			textures,
+			flats,
+			sprites,
+			menuGraphics,
+			stbarGraphics,
+		);
 		initializeSideBarMusic(music);
 	}
 };
 
 const wadFile = initWadInput(onWadFileEvent);
 initContentModule();
+initializeSideBarAttributions();

@@ -1,8 +1,9 @@
 import {
 	type WadColorMap,
 	type WadDehacked,
-	type WadDirectory,
+	type WadDirectoryEntry,
 	type WadEndoom,
+	type WadFileInfo,
 	type WadFlat,
 	type WadHeader,
 	type WadMapGroupList,
@@ -11,12 +12,21 @@ import {
 	type WadMusic,
 	type WadPlaypal,
 	type WadSprite,
+	type WadStbarGraphic,
 	type WadTextures,
 	WadType,
 } from "wadview-lib";
 import { switchContentModule } from "./contentModule";
 
-const pages = ["Metadata", "Colors", "Maps", "Textures", "Music"] as const;
+const pages = [
+	"Metadata",
+	"Misc",
+	"Colors",
+	"Maps",
+	"Images",
+	"Music",
+	"Attributions",
+] as const;
 type PageType = (typeof pages)[number];
 let openedGroups: PageType[] = [];
 let eventListenersAdded: PageType[] = [];
@@ -92,11 +102,9 @@ const createHead = (parent: HTMLDivElement, name: PageType) => {
 };
 
 export const initializeSideBarMeta = (
-	header: WadHeader,
-	directory: WadDirectory,
+	headers: WadFileInfo<WadHeader>[],
+	directory: WadFileInfo<WadDirectoryEntry>[],
 	mapGroups: WadMapGroupList,
-	endoom: WadEndoom,
-	dehacked: WadDehacked | null,
 ) => {
 	const metaSection = document.getElementById("section-meta") as
 		| HTMLDivElement
@@ -106,7 +114,7 @@ export const initializeSideBarMeta = (
 	}
 
 	if (
-		header.type !== WadType.UNKNOWN ||
+		headers.some((h) => h.type !== WadType.UNKNOWN) ||
 		directory.length > 0 ||
 		mapGroups.length > 0
 	) {
@@ -118,7 +126,7 @@ export const initializeSideBarMeta = (
 
 	createHead(metaSection, "Metadata");
 
-	if (header.type !== WadType.UNKNOWN) {
+	if (headers.some((h) => h.type !== WadType.UNKNOWN)) {
 		createChild(metaSection, "HEADER", () => {
 			switchContentModule("header");
 		});
@@ -136,26 +144,49 @@ export const initializeSideBarMeta = (
 		});
 	}
 
-	if (endoom.length > 0) {
-		createChild(metaSection, "ENDOOM", () => {
-			switchContentModule("endoom");
-		});
-	}
-
-	if (dehacked?.dehackedString) {
-		createChild(metaSection, "DEHACKED", () => {
-			switchContentModule("dehacked");
-		});
-	}
-
 	createChild(metaSection, "LOG", () => {
 		switchContentModule("log");
 	});
 };
 
+export const initializeSideBarMisc = (
+	endoom: WadFileInfo<WadEndoom>[],
+	dehacked: WadDehacked | null,
+) => {
+	const miscSection = document.getElementById("section-misc") as
+		| HTMLDivElement
+		| undefined;
+	if (!miscSection) {
+		return;
+	}
+
+	if (endoom.length > 0 || dehacked?.dehackedString) {
+		miscSection.innerHTML = "";
+		miscSection.style.removeProperty("display");
+		removeFromOpened("Misc");
+		removeFromEventListenersAdded("Misc");
+	} else {
+		miscSection.style.display = "none";
+	}
+
+	createHead(miscSection, "Misc");
+
+	if (endoom.length > 0) {
+		createChild(miscSection, "ENDOOM", () => {
+			switchContentModule("endoom");
+		});
+	}
+
+	if (dehacked?.dehackedString) {
+		createChild(miscSection, "DEHACKED", () => {
+			switchContentModule("dehacked");
+		});
+	}
+};
+
 export const initializeSideBarColors = (
-	playpal: WadPlaypal,
-	colormap: WadColorMap,
+	playpals: WadFileInfo<WadPlaypal>[],
+	colormaps: WadFileInfo<WadColorMap>[],
 ) => {
 	const colorSection = document.getElementById("section-colors") as
 		| HTMLDivElement
@@ -164,22 +195,27 @@ export const initializeSideBarColors = (
 		return;
 	}
 
-	if (playpal.typedPlaypal.length > 0 || colormap.length > 0) {
+	if (
+		playpals.some((p) => p.typedPlaypal.length > 0) ||
+		colormaps.some((c) => c.data.length > 0)
+	) {
 		colorSection.innerHTML = "";
 		colorSection.style.removeProperty("display");
 		removeFromOpened("Colors");
 		removeFromEventListenersAdded("Colors");
+	} else {
+		colorSection.style.display = "none";
 	}
 
 	createHead(colorSection, "Colors");
 
-	if (playpal.typedPlaypal.length > 0) {
+	if (playpals.some((p) => p.typedPlaypal.length > 0)) {
 		createChild(colorSection, "PLAYPAL", () => {
 			switchContentModule("playpal");
 		});
 	}
 
-	if (colormap.length > 0) {
+	if (colormaps.some((c) => c.data.length > 0)) {
 		createChild(colorSection, "COLORMAP", () => {
 			switchContentModule("colormap");
 		});
@@ -217,6 +253,7 @@ export const initializeSideBarTextures = (
 	flats: WadFlat[] | null,
 	sprites: WadSprite[] | null,
 	menuGraphics: WadMenuGraphic[] | null,
+	stbarGraphics: WadStbarGraphic[] | null,
 ) => {
 	const textureSection = document.getElementById("section-textures") as
 		| HTMLDivElement
@@ -230,38 +267,54 @@ export const initializeSideBarTextures = (
 		(textures.patchNames.length > 0 ||
 			textures.texture1.length > 0 ||
 			textures.texture2.length > 0);
-
 	const hasFlats = flats && flats.length > 0;
+	const hasSprites = sprites && sprites.length > 0;
+	const hasMenuGraphics = menuGraphics && menuGraphics.length > 0;
+	const hasStbarGraphics = stbarGraphics && stbarGraphics.length > 0;
 
-	if (hasTextures || hasFlats) {
+	if (
+		hasTextures ||
+		hasFlats ||
+		hasSprites ||
+		hasMenuGraphics ||
+		hasStbarGraphics
+	) {
 		textureSection.innerHTML = "";
 		textureSection.style.removeProperty("display");
-		removeFromOpened("Textures");
-		removeFromEventListenersAdded("Textures");
-		createHead(textureSection, "Textures");
+		removeFromOpened("Images");
+		removeFromEventListenersAdded("Images");
+		createHead(textureSection, "Images");
+	} else {
+		textureSection.style.display = "none";
 	}
 
-	if (textures && textures.patchNames.length > 0) {
-		createChild(textureSection, "PATCHES", () => {
+	if (hasTextures) {
+		createChild(textureSection, "PATCHES & TEXTURES", () => {
 			switchContentModule("patches");
 		});
 	}
 
-	if (flats && flats.length > 0) {
+	if (hasFlats) {
 		createChild(textureSection, "FLATS", () => {
 			switchContentModule("flats");
 		});
 	}
 
-	if (sprites && sprites.length > 0) {
+	if (hasSprites) {
 		createChild(textureSection, "SPRITES", () => {
 			switchContentModule("sprites");
 		});
 	}
 
-	if (menuGraphics && menuGraphics.length > 0) {
+	if (hasMenuGraphics) {
 		createChild(textureSection, "MENU GRAPHICS", () => {
 			switchContentModule("menuGraphics");
+		});
+	}
+
+	if (hasStbarGraphics) {
+		createChild(textureSection, "STBAR GRAPHICS", () => {
+			switchContentModule("stbarGraphics");
 		});
 	}
 };
@@ -288,4 +341,23 @@ export const initializeSideBarMusic = (music: WadMusic[] | null) => {
 		musicSection.innerHTML = "";
 		musicSection.style.display = "none";
 	}
+};
+
+export const initializeSideBarAttributions = () => {
+	const attributionsSection = document.getElementById("section-attributions") as
+		| HTMLDivElement
+		| undefined;
+	if (!attributionsSection) {
+		return;
+	}
+
+	attributionsSection.innerHTML = "";
+	attributionsSection.style.removeProperty("display");
+	removeFromOpened("Attributions");
+	removeFromEventListenersAdded("Attributions");
+	createHead(attributionsSection, "Attributions");
+
+	createChild(attributionsSection, "ATTRIBUTIONS", () => {
+		switchContentModule("attributions");
+	});
 };

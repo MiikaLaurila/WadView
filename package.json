@@ -14,11 +14,10 @@
 	"license": "ISC",
 	"dependencies": {
 		"buffer": "^6.0.3",
-		"mus2midi": "^1.0.8",
 		"pixi-viewport": "^4.38.0",
 		"pixi.js": "^6.5.9",
 		"unzipit": "^1.4.0",
-		"wadview-lib": "^0.0.10"
+		"wadview-lib": "^0.0.12"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",

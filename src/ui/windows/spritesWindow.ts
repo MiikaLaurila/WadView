@@ -1,10 +1,11 @@
-import type {
-	WadPatch,
-	WadPatchPost,
-	WadSprite,
-	WadSpriteFrame,
+import {
+	preFilledPlaypal,
+	type WadPatch,
+	type WadPatchPost,
+	type WadSprite,
+	type WadSpriteFrame,
 } from "wadview-lib";
-import { getPlaypal, getSprites } from "../..";
+import { getPlaypals, getSprites } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 import { createModal } from "../other/modal";
@@ -53,7 +54,7 @@ const writePatchToImageData = (
 	scale: number,
 	mirrored = false,
 ) => {
-	const playpal = getPlaypal();
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (!playpal) {
 		console.log("no playpal to draw patch with");
 		return;
@@ -297,7 +298,16 @@ export const initSpritesWindowModule = () => {
 
 		const preview = getPreview(currentAnimation, 0, true, spriteGroup.scale);
 
-		if (preview) canvasContainer.appendChild(preview);
+		if (preview) {
+			const canvasArr = Array.from(preview.getElementsByTagName("canvas"));
+			if (canvasArr.length > 0) {
+				if (canvasArr[0].width > 256)
+					canvasContainer.style.width = `${canvasArr[0].width}px`;
+				if (canvasArr[0].height > 256)
+					canvasContainer.style.height = `${canvasArr[0].height}px`;
+			}
+			canvasContainer.appendChild(preview);
+		}
 		if (currentAnimation && currentAnimation.frames.length > 1) {
 			canvasContainer.appendChild(
 				getSlider(spriteGroup.name, currentAnimation, 0),

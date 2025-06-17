@@ -84,7 +84,7 @@ const executeDsdaSearch = (val: string, loadParent: HTMLElement) => {
 					`${dsdaBaseUrl}/`,
 				),
 				dsdaUrl: tableLink.href
-					.replace(window.location.origin, `${dsdaBaseUrl}/`)
+					.replace(window.location.origin, `${dsdaBaseUrl}`)
 					.replace("/table_view", ""),
 			};
 		}

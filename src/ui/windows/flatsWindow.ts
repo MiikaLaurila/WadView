@@ -1,5 +1,5 @@
-import type { WadFlat } from "wadview-lib";
-import { getFlats, getPlaypal } from "../..";
+import { preFilledPlaypal, type WadFlat } from "wadview-lib";
+import { getFlats, getPlaypals } from "../..";
 import { createModule } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
 import { createModal } from "../other/modal";
@@ -12,7 +12,7 @@ const canvasContainerClass = "flats-canvas-container";
 let flats: WadFlat[];
 
 const writeFlatToImageData = (flat: WadFlat, imageData: ImageData) => {
-	const playpal = getPlaypal();
+	const playpal = getPlaypals()[0] ?? preFilledPlaypal;
 	if (!playpal) {
 		console.log("no playpal to draw flat with");
 		return;

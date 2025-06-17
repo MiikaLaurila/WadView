@@ -16,16 +16,16 @@ export class Timidity {
 	private _array: Int16Array;
 	private _interval: number | undefined;
 	private _baseUrl: string;
-	// biome-ignore lint/suspicious/noExplicitAny: *shrug*
-	private _pendingFetches: Record<any, any>;
+	private _rootUrl: string;
+	private _pendingFetches: Record<
+		string,
+		Promise<Uint8Array<ArrayBuffer>> | undefined
+	>;
 	private _currentUrlOrBuf: string | Uint8Array | null;
 	private _libHolder: LibTimidity.Module | undefined;
-	private _audioProcessorHolder: AudioWorkletNode | undefined;
-	private _audioProcessorPortHolder: MessagePort | undefined;
+	private _audioWorklet: AudioWorkletNode | undefined;
+	private _audioWorkletMessagePort: MessagePort | undefined;
 	private _volume = 0.5;
-	private _timeUpdateSubjects: Array<
-		(currentTime: number, maxTime: number) => void
-	> = [];
 
 	public destroyed = false;
 
@@ -35,6 +35,7 @@ export class Timidity {
 		let baseUrlParsed = baseUrl;
 		if (!baseUrlParsed.endsWith("/")) baseUrlParsed += "/";
 		this._baseUrl = new URL(baseUrlParsed, window.location.origin).href;
+		this._rootUrl = new URL("/", window.location.origin).href;
 
 		this._ready = false;
 		this._playing = false;
@@ -53,7 +54,7 @@ export class Timidity {
 		});
 
 		LibTimidity({
-			locateFile: (file: string) => new URL(file, this._baseUrl).href,
+			locateFile: (file: string) => new URL(file, this._rootUrl).href,
 		}).then((lib) => {
 			this._lib = lib;
 			this._onLibReady(onReady);
@@ -61,43 +62,23 @@ export class Timidity {
 	}
 
 	private async initAudioWorklet() {
-		if (this._audioProcessorHolder) return;
+		if (this._audioWorklet) return;
 		await this._audioContext.audioWorklet.addModule("./midiAudioProcessor.js");
 
-		this._audioProcessor = new AudioWorkletNode(
+		this._audioWorklet = new AudioWorkletNode(
 			this._audioContext,
 			"midi-audio-processor",
 			{ numberOfOutputs: 1, outputChannelCount: [2] },
 		);
 
-		this._audioProcessorPort = this._audioProcessor.port;
-		this._audioProcessorPort.onmessage = this.messageFromWorker.bind(this);
-		this._audioProcessorPort.postMessage({
+		this._audioWorkletMessagePort = this._audioWorklet.port;
+		this._audioWorkletMessagePort.onmessage = this.messageFromWorker.bind(this);
+		this._audioWorkletMessagePort.postMessage({
 			command: "set-volume",
 			data: { volume: 0.5 },
 		});
 
-		this._audioProcessor.connect(this._audioContext.destination);
-	}
-
-	get _audioProcessorPort(): MessagePort {
-		if (!this._audioProcessorPortHolder)
-			throw new Error("Audio processor not ready yet");
-		return this._audioProcessorPortHolder;
-	}
-
-	set _audioProcessorPort(audioProcessorPort: MessagePort) {
-		this._audioProcessorPortHolder = audioProcessorPort;
-	}
-
-	get _audioProcessor(): AudioWorkletNode {
-		if (!this._audioProcessorHolder)
-			throw new Error("Audio processor not ready yet");
-		return this._audioProcessorHolder;
-	}
-
-	set _audioProcessor(audioProcessor: AudioWorkletNode) {
-		this._audioProcessorHolder = audioProcessor;
+		this._audioWorklet.connect(this._audioContext.destination);
 	}
 
 	get _lib(): LibTimidity.Module {
@@ -123,8 +104,8 @@ export class Timidity {
 
 	set volume(volume: number) {
 		this._volume = volume;
-		if (this._audioProcessorPortHolder) {
-			this._audioProcessorPort.postMessage({
+		if (this._audioWorkletMessagePort) {
+			this._audioWorkletMessagePort.postMessage({
 				command: "set-volume",
 				data: { volume },
 			});
@@ -145,22 +126,23 @@ export class Timidity {
 	}
 
 	private async _onLibReady(onReady: () => void) {
-		const cfg = await this._fetch(new URL("timidity.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/timidity.cfg", cfg);
-		const cfg2 = await this._fetch(new URL("gravis.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/gravis.cfg", cfg2);
-		const cfg3 = await this._fetch(new URL("gsdrums.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/gsdrums.cfg", cfg3);
-		const cfg4 = await this._fetch(new URL("gssfx.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/gssfx.cfg", cfg4);
-		const cfg5 = await this._fetch(new URL("xgmap2.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/xgmap2.cfg", cfg5);
-		const cfg6 = await this._fetch(new URL("proteus2.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/proteus2.cfg", cfg6);
-		const cfg7 = await this._fetch(new URL("mt-32.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/mt-32.cfg", cfg7);
-		const cfg8 = await this._fetch(new URL("sustain.cfg", this._baseUrl));
-		this._lib.FS.writeFile("/sustain.cfg", cfg8);
+		const createCfgPromise = (cfgName: string) => {
+			return this._fetch(new URL(cfgName, this._baseUrl)).then((cfg) => {
+				this._lib.FS.writeFile(`/${cfgName}`, cfg);
+			});
+		};
+
+		const cfgPromises: Array<Promise<void>> = [];
+		cfgPromises.push(createCfgPromise("timidity.cfg"));
+		cfgPromises.push(createCfgPromise("gravis.cfg"));
+		cfgPromises.push(createCfgPromise("gsdrums.cfg"));
+		cfgPromises.push(createCfgPromise("gssfx.cfg"));
+		cfgPromises.push(createCfgPromise("xgmap2.cfg"));
+		cfgPromises.push(createCfgPromise("proteus2.cfg"));
+		cfgPromises.push(createCfgPromise("mt-32.cfg"));
+		cfgPromises.push(createCfgPromise("sustain.cfg"));
+
+		await Promise.all(cfgPromises);
 
 		const result = this._lib._mid_init("/timidity.cfg");
 		if (result !== 0) {
@@ -347,14 +329,16 @@ export class Timidity {
 	async play() {
 		if (this.destroyed) throw new Error("play() called after destroy()");
 
-		if (!this._audioProcessorHolder) {
+		if (!this._audioWorklet) {
 			await this.initAudioWorklet();
 		}
 
-		this._audioProcessorPort.postMessage({
-			command: "set-volume",
-			data: { volume: this.volume },
-		});
+		if (this._audioWorkletMessagePort) {
+			this._audioWorkletMessagePort.postMessage({
+				command: "set-volume",
+				data: { volume: this.volume },
+			});
+		}
 		// If the Timidity constructor was not invoked inside a user-initiated event
 		// handler, then the AudioContext will be suspended. Attempt to resume it.
 		await this._audioContext.resume();
@@ -390,13 +374,15 @@ export class Timidity {
 			output1[i] = 0;
 		}
 
-		this._audioProcessorPort.postMessage({
-			command: "processed-data",
-			data: {
-				buffers: [output0, output1],
-				isFinal: this._playing && sampleCount === 0,
-			},
-		});
+		if (this._audioWorkletMessagePort) {
+			this._audioWorkletMessagePort.postMessage({
+				command: "processed-data",
+				data: {
+					buffers: [output0, output1],
+					isFinal: this._playing && sampleCount === 0,
+				},
+			});
+		}
 	}
 
 	private _readMidiData() {
@@ -502,9 +488,9 @@ export class Timidity {
 			this._bufferPtr = 0;
 		}
 
-		if (this._audioProcessorHolder) {
-			this._audioProcessor.port.close();
-			this._audioProcessor.disconnect();
+		if (this._audioWorklet) {
+			this._audioWorklet.port.close();
+			this._audioWorklet.disconnect();
 		}
 
 		if (this._audioContext) {
