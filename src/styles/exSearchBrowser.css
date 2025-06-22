@@ -3,6 +3,12 @@
 	gap: 12px;
 }
 
+@media only screen and (max-width: 1080px) {
+	#ex-search-window > div:first-of-type {
+		flex-direction: column;
+	}
+}
+
 #ex-search-window > div > div:first-of-type {
 	border-right: 1px solid black;
 }

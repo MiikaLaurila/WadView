@@ -1,4 +1,4 @@
-let topBarFileName = "<no file selected>";
+let topBarFileName = "<no file>";
 let topBarPageName = "<no page selected>";
 
 let sideBarOpen = false;
