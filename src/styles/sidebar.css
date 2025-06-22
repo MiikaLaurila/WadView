@@ -10,6 +10,19 @@
 	width: 200px;
 }
 
+@media only screen and (max-width: 1080px) {
+	#sidebar {
+		width: 0px;
+		height: calc(100vh - 34px);
+	}
+
+	#sidebar.open {
+		width: 100vw;
+		top: 34px;
+		border-top: 1px solid black;
+	}
+}
+
 .section {
 	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
 	font-family: "Arial";
@@ -18,8 +31,8 @@
 }
 
 .section .head {
-	padding-top: 8px;
-	padding-bottom: 8px;
+	padding-top: 9px;
+	padding-bottom: 9px;
 	padding-left: 8px;
 	background-color: rgba(0, 0, 0, 0.03);
 }
@@ -39,6 +52,15 @@
 .section .subhead:hover {
 	cursor: pointer;
 	text-decoration: underline;
+}
+
+@media only screen and (max-width: 1080px) {
+	.section .subhead {
+		font-size: 14px;
+		padding-left: 12px;
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
 }
 
 .section .subhead:last-child {

@@ -6,6 +6,12 @@
 	font-family: Arial;
 }
 
+@media only screen and (max-width: 1080px) {
+	#map-window-bottom-area {
+		flex-direction: column;
+	}
+}
+
 #map-window-button-container > div {
 	margin-top: 8px;
 	margin-left: 8px;
@@ -89,6 +95,12 @@
 	user-select: none;
 	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
 	font-family: "Roboto Mono";
+}
+
+@media only screen and (max-width: 1080px) {
+	#map-window-toggle-area {
+		width: 100%;
+	}
 }
 
 #map-window-toggle-area > p {

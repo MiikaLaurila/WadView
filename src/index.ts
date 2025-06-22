@@ -35,7 +35,7 @@ import {
 	initializeSideBarAttributions,
 	initializeSideBarMisc,
 } from "./ui/main/sidebar";
-import { setTopBarFileName } from "./ui/main/topbar";
+import { initTopBar, setTopBarFileName } from "./ui/main/topbar";
 import { initWadInput } from "./ui/main/wadInput";
 import { addLogWindowMessage } from "./ui/windows/logWindow";
 import { closeMusic } from "./ui/windows/musicWindow";
@@ -199,3 +199,4 @@ const onWadFileEvent = (evt: WadFileEvent) => {
 const wadFile = initWadInput(onWadFileEvent);
 initContentModule();
 initializeSideBarAttributions();
+initTopBar();

@@ -3,3 +3,9 @@
 	width: 600px;
 	height: calc(100vh - 55px);
 }
+
+@media only screen and (max-width: 1080px) {
+	#dehacked-window-textarea {
+		width: 100%;
+	}
+}

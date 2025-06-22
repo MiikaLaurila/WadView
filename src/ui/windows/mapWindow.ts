@@ -62,8 +62,16 @@ const canvasPadding = 10;
 const widthOffset = 216;
 const heightOffset = 190;
 const extraMusicOffset = 40;
+let sidebarEnabled = true;
 
-let maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
+const maxWidth = () => {
+	if (window.innerWidth <= 1080) {
+		sidebarEnabled = false;
+		return window.innerWidth - 16;
+	}
+	sidebarEnabled = true;
+	return window.innerWidth - widthOffset - canvasPadding * 2;
+};
 const maxHeight = () => {
 	return (
 		Math.min(
@@ -99,7 +107,6 @@ let monsterThingCache: ThingCacheEntry[] | null = null;
 let selectedPalette: MapWindowPalette = mapPalettes[0];
 
 window.addEventListener("resize", () => {
-	maxWidth = window.innerWidth - widthOffset - canvasPadding * 2;
 	if (app && viewport && dim) {
 		clearData();
 		setBounds();
@@ -139,6 +146,7 @@ export const initMapWindowModule = (mapName: string) => {
 	mapCanvas.id = mapWindowCanvasId;
 	mapCanvas.getContext("webgl", { preserveDrawingBuffer: true, stencil: true });
 	mapCanvas.addEventListener("mousemove", onCanvasMouseMove);
+	mapCanvas.addEventListener("touchstart", onCanvasTouchStart);
 	mapWindow.appendChild(mapCanvas);
 
 	mapWindow.appendChild(getBottomArea(mapName));
@@ -161,9 +169,66 @@ const onCanvasMouseMove = (event: MouseEvent) => {
 		return { x: p1.x - p2.x, y: p1.y - p2.y };
 	};
 	const viewportMousePos = { x: event.pageX, y: event.pageY };
+	const leftOffset = sidebarEnabled ? 208 : 0;
+	const topOffset = sidebarEnabled ? 43 : 38;
 	const topLeftCanvasPos = {
-		x: canvasRef.offsetLeft + 208,
-		y: canvasRef.offsetTop + 43,
+		x: canvasRef.offsetLeft + leftOffset,
+		y: canvasRef.offsetTop + topOffset,
+	};
+
+	const canvasCoord = diffPoints(viewportMousePos, topLeftCanvasPos);
+	const transform = viewport.transform;
+	const transformedX =
+		(canvasCoord.x - transform.position.x) / transform.scale.x;
+	const transformedY =
+		(canvasCoord.y - transform.position.y) / transform.scale.y;
+	const canvasPoint = { x: transformedX, y: transformedY };
+
+	const newPoint = canvasPoint;
+	newPoint.y *= -1;
+	newPoint.x -= canvasPadding;
+	newPoint.y += canvasRef.height - canvasPadding;
+	newPoint.x -= dim.offset.x;
+	newPoint.y -= dim.offset.y;
+	newPoint.x /= dim.scale;
+	newPoint.y /= dim.scale;
+	newPoint.x += bounds.left;
+	newPoint.y += bounds.top;
+
+	const isInsideBoundingBox = (a: Point, b: Point, size: number): boolean => {
+		const halfSize = size / 2;
+		return Math.abs(a.x - b.x) <= halfSize && Math.abs(a.y - b.y) <= halfSize;
+	};
+	const things = applyDehacked(mapData.things)
+		.filter((t) => thingIsRenderable(t))
+		.filter((t) =>
+			isInsideBoundingBox(newPoint, { x: t.x, y: t.y }, t.size * 2),
+		);
+	if (things.length > 0) {
+		drawHover({ x: viewportMousePos.x, y: viewportMousePos.y, things });
+	} else if (hoverDivs.length > 0) {
+		clearHover();
+	}
+};
+
+const onCanvasTouchStart = (event: TouchEvent) => {
+	if (event.touches.length !== 1) {
+		return;
+	}
+
+	const touchPoint = event.touches[0];
+
+	const canvasRef = event.currentTarget as HTMLCanvasElement;
+	if (!viewport || !bounds || !dim || !canvasRef) return;
+	const diffPoints = (p1: Point, p2: Point): Point => {
+		return { x: p1.x - p2.x, y: p1.y - p2.y };
+	};
+	const viewportMousePos = { x: touchPoint.pageX, y: touchPoint.pageY };
+	const leftOffset = sidebarEnabled ? 208 : 0;
+	const topOffset = sidebarEnabled ? 43 : 38;
+	const topLeftCanvasPos = {
+		x: canvasRef.offsetLeft + leftOffset,
+		y: canvasRef.offsetTop + topOffset,
 	};
 
 	const canvasCoord = diffPoints(viewportMousePos, topLeftCanvasPos);
@@ -231,7 +296,7 @@ const setDimensions = (): void => {
 
 	const mapWidth = bounds.right - bounds.left;
 	const mapHeight = bounds.bottom - bounds.top;
-	let maxW = maxWidth;
+	let maxW = maxWidth();
 	let maxH = maxHeight();
 
 	let scale = 1;
@@ -313,7 +378,7 @@ const initializeMap = () => {
 	});
 
 	app.stage.addChild(viewport);
-	viewport.drag().wheel();
+	viewport.drag().wheel().pinch();
 
 	const graphy: Graphics = new Graphics();
 	drawMap(graphy, renderFull ? 3 : 1);
@@ -874,24 +939,6 @@ const getButtonArea = (mapName: string) => {
 		initMapWindowModule(mapName);
 	};
 	upperButtons.appendChild(resetButton);
-	const dlButton = document.createElement("button");
-	dlButton.innerText = "Export";
-	dlButton.onclick = () => {
-		const element = document.createElement("a");
-		element.setAttribute(
-			"href",
-			`data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(mapData))}`,
-		);
-		element.setAttribute("download", `${mapData.name}.json`);
-
-		element.style.display = "none";
-		document.body.appendChild(element);
-
-		element.click();
-
-		document.body.removeChild(element);
-	};
-	upperButtons.appendChild(dlButton);
 
 	const maxResParent = document.createElement("div");
 	const maxRes = document.createElement("input");

@@ -25,6 +25,7 @@ import {
 	initSpritesWindowModule,
 } from "../windows/spritesWindow";
 import { initStbarGraphicsModule } from "../windows/stbarGraphicsWindow";
+import { closeMenus } from "./topbar";
 
 //prettier-ignore
 export const contentModule = [
@@ -96,6 +97,7 @@ export const switchContentModule = (
 	options?: ModuleOptions,
 ) => {
 	selectedModule = id;
+	closeMenus();
 	switch (selectedModule) {
 		case "log":
 			initLogWindowModule();

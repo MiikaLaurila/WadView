@@ -38,3 +38,14 @@
 .dir-container > div > div > div:nth-of-type(6) {
 	width: 75px;
 }
+
+@media only screen and (max-width: 1080px) {
+	.dir-container > div {
+		width: 100%;
+		margin: 0;
+		margin-bottom: 8px;
+	}
+	.dir-container > div > div > div:nth-of-type(6) {
+		display: none;
+	}
+}

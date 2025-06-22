@@ -1,47 +1,56 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8"/>
-        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>WadView</title>
-    </head>
-    <body>
-        <div id="topbar">
-            <h1 id="topbar-head"></h1>
-            <div id="topbar-input-boxes">
-                <input type="file" accept=".wad,.zip" id="wad-input-hidden"/>
-                <button id="wad-input-doom">Open DOOM1.WAD</button>
-                <button id="wad-input-idgames">Search idgames/dsda</button>
-                <button id="wad-input" >Select WAD/zip</button>
-                <button id="wad-input-text-loader">Load URL</button>
-                <input type="text" id="wad-input-text"/>
-            </div>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WadView</title>
+</head>
+
+<body>
+    <div id="topbar">
+        <button id="sidebar-open">
+            Menu
+        </button>
+        <h1 id="topbar-head"></h1>
+        <button id="topbar-input-boxes-open">
+            Select WAD
+        </button>
+        <div id="topbar-input-boxes">
+            <input type="file" accept=".wad,.zip" id="wad-input-hidden" />
+            <button id="wad-input-doom">Open DOOM1.WAD</button>
+            <button id="wad-input-idgames">Search idgames/dsda</button>
+            <button id="wad-input">Select WAD/zip</button>
+            <button id="wad-input-text-loader">Load URL</button>
+            <input type="text" id="wad-input-text" placeholder="Input URL" />
         </div>
-        <div id="sidebar">
-            <div class="section" id="section-meta" style="display: none;">
-                <div class="head">Meta</div>
-            </div>
-            <div class="section" id="section-misc" style="display: none;">
-                <div class="head">Misc</div>
-            </div>
-            <div class="section" id="section-colors" style="display: none;">
-                <div class="head">Colors</div>
-            </div>
-            <div class="section" id="section-maps" style="display: none;">
-                <div class="head">Maps</div>
-            </div>
-            <div class="section" id="section-textures" style="display: none;">
-                <div class="head">Images</div>
-            </div>
-            <div class="section" id="section-music" style="display: none;">
-                <div class="head">Music</div>
-            </div>
-            <div class="section" id="section-attributions">
-                <div class="head">Attributions</div>
-            </div>
+    </div>
+    <div id="sidebar">
+        <div class="section" id="section-meta" style="display: none;">
+            <div class="head">Meta</div>
         </div>
-        <div id="content">
+        <div class="section" id="section-misc" style="display: none;">
+            <div class="head">Misc</div>
         </div>
-    </body>
+        <div class="section" id="section-colors" style="display: none;">
+            <div class="head">Colors</div>
+        </div>
+        <div class="section" id="section-maps" style="display: none;">
+            <div class="head">Maps</div>
+        </div>
+        <div class="section" id="section-textures" style="display: none;">
+            <div class="head">Images</div>
+        </div>
+        <div class="section" id="section-music" style="display: none;">
+            <div class="head">Music</div>
+        </div>
+        <div class="section" id="section-attributions">
+            <div class="head">Attributions</div>
+        </div>
+    </div>
+    <div id="content">
+    </div>
+</body>
+
 </html>

@@ -7,7 +7,14 @@
 	top: 0px;
 	width: calc(100vw - 200px);
 	border-bottom: 1px solid grey;
-	display: "flex";
+}
+
+@media only screen and (max-width: 1080px) {
+	#topbar {
+		left: 0;
+		top: 0;
+		width: 100vw;
+	}
 }
 
 #topbar-head {
@@ -29,4 +36,62 @@
 	margin-right: 24px;
 	float: right;
 	padding-top: 6px;
+}
+
+#topbar-input-boxes-open,
+#sidebar-open {
+	display: none;
+}
+
+@media only screen and (max-width: 1080px) {
+	#topbar-head {
+		padding-left: 0px;
+		width: calc(100vw - 150px);
+	}
+
+	#topbar-input-boxes {
+		display: none;
+		margin: 0;
+		float: left;
+		padding: 0;
+		flex-direction: column;
+		width: 100vw;
+		gap: 8px;
+		padding-left: 8px;
+		padding-right: 8px;
+		height: calc(100vh - 40px);
+		background-color: white;
+		padding-top: 8px;
+	}
+
+	#topbar-input-boxes.open {
+		display: flex;
+	}
+
+	#topbar-input-boxes button,
+	#topbar-input-boxes input {
+		height: 32px;
+	}
+
+	#topbar-input-boxes-open,
+	#sidebar-open {
+		display: initial;
+		background-color: transparent;
+		height: 28px;
+		margin-left: 4px;
+		padding: 0;
+		padding-left: 3px;
+		border: 2px outset gray;
+		/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
+		font-family: Arial;
+		color: black;
+	}
+
+	#sidebar-open {
+		width: 45px;
+	}
+
+	#topbar-input-boxes-open {
+		width: 85px;
+	}
 }

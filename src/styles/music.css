@@ -2,6 +2,13 @@
 	display: flex;
 	gap: 8px;
 }
+
+@media only screen and (max-width: 1080px) {
+	#music-window-container {
+		flex-direction: column-reverse;
+	}
+}
+
 #music-window-container.minimized {
 	position: fixed;
 	bottom: 0;
@@ -15,6 +22,13 @@
 	z-index: 1;
 }
 
+@media only screen and (max-width: 1080px) {
+	#music-window-container.minimized {
+		height: 110px;
+		width: 100vw;
+	}
+}
+
 .music-window-music-list-container {
 	max-height: calc(100vh - 80px);
 	border: 1px solid black;
@@ -22,6 +36,13 @@
 	user-select: none;
 	flex-grow: 0.25;
 	max-width: 500px;
+}
+
+@media only screen and (max-width: 1080px) {
+	.music-window-music-list-container {
+		max-height: calc(100vh - 180px);
+		max-width: initial;
+	}
 }
 
 #music-window-container.minimized .music-window-music-list-container {
@@ -93,11 +114,26 @@
 	flex-direction: row;
 	width: 100%;
 }
+
+@media only screen and (max-width: 1080px) {
+	#music-window-container.minimized .music-window-player-controls {
+		flex-direction: column;
+		width: 100%;
+		gap: 4px;
+		align-items: start;
+	}
+}
 #music-window-playing-text {
 	width: 175px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+}
+
+@media only screen and (max-width: 1080px) {
+	#music-window-playing-text {
+		width: 100%;
+	}
 }
 
 #music-window-playing-text > span:first-of-type {
@@ -113,6 +149,12 @@
 	word-break: break-all;
 }
 
+@media only screen and (max-width: 1080px) {
+	#music-window-playing-text > span:nth-of-type(2) {
+		max-width: initial;
+	}
+}
+
 .music-window-player-controls > div:nth-of-type(2) {
 	display: flex;
 	gap: 8px;
@@ -121,6 +163,8 @@
 
 .music-window-player-controls > div:nth-of-type(2) > button {
 	font-size: 200%;
+	width: 40px;
+	padding: 0;
 }
 
 .music-window-player-controls .music-window-player-controls-sliders {
@@ -129,10 +173,24 @@
 	gap: 100px;
 }
 
+@media only screen and (max-width: 1080px) {
+	.music-window-player-controls .music-window-player-controls-sliders {
+		gap: 8px;
+	}
+}
+
 #music-window-container.minimized
 	.music-window-player-controls
 	.music-window-player-controls-sliders {
 	gap: 40px;
+}
+
+@media only screen and (max-width: 1080px) {
+	#music-window-container.minimized
+		.music-window-player-controls
+		.music-window-player-controls-sliders {
+		gap: 8px;
+	}
 }
 
 .music-slider-container {
@@ -153,14 +211,30 @@
 	text-align: right;
 }
 
+@media only screen and (max-width: 1080px) {
+	.music-slider-container.seeker > input {
+		width: 120px;
+	}
+}
+
 .music-window-player-controls-maximize {
 	display: none;
 	font-size: 200%;
 	margin-left: auto;
 	background-color: transparent;
 	border: 1px solid grey;
+	padding: 0;
+	bottom: 42px;
+	width: 40px;
 }
 
 #music-window-container.minimized .music-window-player-controls-maximize {
 	display: initial;
+}
+
+@media only screen and (max-width: 1080px) {
+	#music-window-container.minimized .music-window-player-controls-maximize {
+		position: fixed;
+		right: 8px;
+	}
 }

@@ -1,7 +1,11 @@
 button {
-	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
-	font-family: "Roboto Mono";
 	font-size: 12px;
+	display: initial;
+	background-color: transparent;
+	border: 2px outset gray;
+	/* biome-ignore lint/a11y/useGenericFontNames: <explanation> */
+	font-family: Arial;
+	color: black;
 }
 
 h1 {
