@@ -1,5 +1,5 @@
 {
-	"files": {
+	"linter": {
 		"ignore": ["src/*.js", "static/*.js", "static/eawpats/**/*", "src/lib/*"]
 	}
 }

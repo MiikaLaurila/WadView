@@ -5,6 +5,12 @@ import { mus2midi } from "../../lib/mus2midi";
 import { Timidity } from "../../lib/timidity/timidity";
 import { createModule, disposeModules } from "../main/contentModule";
 import { setTopBarPageName } from "../main/topbar";
+import {
+	destroySpessaSynth,
+	setSpessaSynthVolume,
+	spessaSynth,
+} from "../../lib/spessasynth/spessasynth";
+import type { Sequencer } from "spessasynth_lib";
 
 const containerId = "music-window-container";
 const musicListContainerClass = "music-window-music-list-container";
@@ -18,12 +24,16 @@ const musicControlsSliderContainerClass =
 	"music-window-player-controls-sliders";
 const musicControlsMaximizeButtonClass =
 	"music-window-player-controls-maximize";
+const musicControlsSwitchPlayerButtonId = "music-window-switch-player-button";
 const sliderContainerClass = "music-slider-container";
 
-type PlayerType = "midi" | "normal" | "mod";
+type MidiPlayerType = "spessasynth" | "timidity";
+type PlayerType = MidiPlayerType | "normal" | "mod";
+const playerTypes = ["timidity", "spessasynth", "normal", "mod"] as const;
 let volume = 0.5;
 let musicList: WadMusic[] = [];
-let midiPlayer = new Timidity(() => {}, "./eawpats");
+let timidityPlayerInstance: Timidity | undefined = undefined;
+let spessasynthPlayerInstance: Sequencer | undefined = undefined;
 let modPlayer = new ModPlayer();
 let normalMusicPlayer: HTMLAudioElement | null = null;
 let selectedMusic: WadMusic | null = null;
@@ -31,20 +41,55 @@ let rootContainer: HTMLDivElement | null = null;
 let selectedMusicDiv: HTMLDivElement | null = null;
 let playingMusicDiv: HTMLDivElement | null = null;
 let playingTextDiv: HTMLDivElement | null = null;
-let currentPlayerType: PlayerType = "midi";
+let currentPlayerType: PlayerType = "spessasynth";
+let selectedMidiPlayer: MidiPlayerType = "spessasynth";
 
-let timeUpdateEvtListener: ((e: Event) => void) | null = null;
+let timeUpdateEvtListener: ((e: Event | number) => void) | null = null;
 let songEndedEvtListener: (() => void) | null = null;
 export let musicVisibilityState: "off" | "on" | "minimized" = "off";
 
-const reinitMidiPlayer = async () => {
-	if (!midiPlayer.destroyed) midiPlayer.destroy();
-	return new Promise<void>((resolve) => {
-		midiPlayer = new Timidity(() => {
-			midiPlayer.volume = volume;
-			resolve();
+interface PlayerState {
+	currentMusic: string | null;
+	currentTime: number;
+}
+
+const playerState: Record<PlayerType, PlayerState> = {
+	timidity: {
+		currentMusic: null,
+		currentTime: 0,
+	},
+	spessasynth: {
+		currentMusic: null,
+		currentTime: 0,
+	},
+	normal: {
+		currentMusic: null,
+		currentTime: 0,
+	},
+	mod: {
+		currentMusic: null,
+		currentTime: 0,
+	},
+};
+
+const getNewTimidityPlayer = async () => {
+	if (timidityPlayerInstance && !timidityPlayerInstance.destroyed) {
+		timidityPlayerInstance.destroy();
+	}
+	return new Promise<Timidity>((resolve) => {
+		const newTimidityPlayerInstance = new Timidity(() => {
+			newTimidityPlayerInstance.volume = volume;
+			timidityPlayerInstance = newTimidityPlayerInstance;
+			resolve(newTimidityPlayerInstance);
 		}, "./eawpats");
 	});
+};
+
+const getSpessaSynthPlayer = async () => {
+	if (!spessasynthPlayerInstance) {
+		spessasynthPlayerInstance = await spessaSynth();
+	}
+	return spessasynthPlayerInstance;
 };
 
 const reinitModPlayer = () => {
@@ -70,28 +115,65 @@ const disposeNormalMusicPlayer = () => {
 };
 
 const extToPlayerType = (ext: string): PlayerType | null => {
-	if (ext === "mus" || ext === "mid") return "midi";
+	if (ext === "mus" || ext === "mid") {
+		if (selectedMidiPlayer === "timidity") return "timidity";
+		return "spessasynth";
+	}
 	if (ext === "mod") return "mod";
 	if (ext === "ogg" || ext === "mp3" || ext === "wav") return "normal";
 	return null;
 };
 
 const playerControls = {
-	midi: {
+	timidity: {
 		play: async (music: WadMusic, midi: Uint8Array) => {
-			if (midiPlayer.paused && music.name === playingMusicDiv?.id) {
-				midiPlayer.play();
-				return;
-			}
-			await reinitMidiPlayer();
-			await midiPlayer.load(midi);
-			if (!midiPlayer.destroyed) midiPlayer.play();
+			const wasPaused =
+				timidityPlayerInstance?.paused &&
+				music.name === playerState.timidity.currentMusic;
+			const prevTime = playerState.timidity.currentTime;
+			const timidityPlayer = await getNewTimidityPlayer();
+			await timidityPlayer.load(midi);
+			timidityPlayer.volume = volume;
+			if (!timidityPlayer.destroyed) timidityPlayer.play();
 			else {
 				console.error("Failed to load midi");
 			}
+			timidityPlayer.seek(wasPaused ? prevTime : 0);
 		},
-		pause: () => midiPlayer.paused || midiPlayer.pause(),
-		seek: (position: number) => midiPlayer.seek(position),
+		pause: async () => {
+			if (timidityPlayerInstance && !timidityPlayerInstance.paused) {
+				timidityPlayerInstance.pause();
+			}
+		},
+		seek: async (position: number) => {
+			timidityPlayerInstance?.seek(position);
+		},
+	},
+	spessasynth: {
+		play: async (music: WadMusic, midi: Uint8Array) => {
+			const spessaSynth = await getSpessaSynthPlayer();
+			if (
+				spessaSynth.songsAmount > 0 &&
+				spessaSynth.paused &&
+				music.name === playerState.spessasynth.currentMusic
+			) {
+				spessaSynth.play();
+				return;
+			}
+			setSpessaSynthVolume(volume);
+			spessaSynth.loadNewSongList(
+				[{ binary: midi.buffer as ArrayBuffer }],
+				true,
+			);
+		},
+		pause: async () => {
+			const spessaSynth = await getSpessaSynthPlayer();
+			if (!spessaSynth.paused) spessaSynth.pause();
+		},
+		seek: async (position: number) => {
+			const spessaSynth = await getSpessaSynthPlayer();
+			spessaSynth.currentTime = position;
+		},
 	},
 	normal: {
 		play: (music: WadMusic) => {
@@ -141,6 +223,8 @@ const setPlaying = (musicId: string, musicName?: string) => {
 
 	musicDiv.classList.add("playing");
 	playingMusicDiv = musicDiv as HTMLDivElement;
+
+	playerState[currentPlayerType].currentMusic = musicId;
 
 	const playingDiv = musicDiv.querySelector(`.${musicListRowPlayingClass}`);
 	if (playingDiv) (playingDiv as HTMLDivElement).innerText = "▶️";
@@ -199,7 +283,9 @@ const playSong = async (musicToPlay: WadMusic) => {
 		console.log(`Can't play ${ext} files`);
 		return;
 	}
+	const previousPlayerType = currentPlayerType;
 	currentPlayerType = playerType;
+	toggleSwitchPlayerButton(playerType);
 
 	let playData = musicToPlay.data;
 	if (ext === "mus") {
@@ -207,13 +293,12 @@ const playSong = async (musicToPlay: WadMusic) => {
 	}
 
 	const playingMusic = musicList.find(
-		(m) => playingMusicDiv && m.name === playingMusicDiv.id,
+		(m) => m.name === playerState[previousPlayerType].currentMusic,
 	);
 
 	if (playingMusic) {
-		const playingType = extToPlayerType(playingMusic.type.ext);
-		if (playingType && playingType !== playerType) {
-			playerControls[playingType].pause();
+		for (const playerType of playerTypes) {
+			playerControls[playerType].pause();
 		}
 	}
 
@@ -221,29 +306,25 @@ const playSong = async (musicToPlay: WadMusic) => {
 	setPlaying(musicToPlay.name, musicToPlay.inMap);
 };
 
-const pauseSong = () => {
-	if (!playingMusicDiv) return;
-
-	const music = musicList.find(
-		(m) => playingMusicDiv && m.name === playingMusicDiv.id,
+const pauseSong = async () => {
+	const currentMusic = musicList.find(
+		(m) => m.name === playerState[currentPlayerType].currentMusic,
 	);
-	if (!music) return;
+	if (!currentMusic) return;
 
-	const { ext } = music.type;
+	const { ext } = currentMusic.type;
 	const playerType = extToPlayerType(ext);
 	if (!playerType) {
 		return;
 	}
 
-	playerControls[playerType].pause();
-	setPaused(music.name, music.inMap);
+	await playerControls[playerType].pause();
+	setPaused(currentMusic.name, currentMusic.inMap);
 };
 
 const navigateSong = (direction: 1 | -1) => {
-	if (!playingMusicDiv) return;
-
 	const currentIndex = musicList.findIndex(
-		(m) => playingMusicDiv && m.name === playingMusicDiv.id,
+		(m) => m.name === playerState[currentPlayerType].currentMusic,
 	);
 	if (currentIndex === -1) return;
 
@@ -266,7 +347,7 @@ const formatTime = (time: number): string => {
 	return `${String(totalMinutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
-const handleTimeUpdate = (e: Event) => {
+const handleTimeUpdate = (e: Event | number) => {
 	const seekerSlider = document.querySelector(
 		".seeker input[type='range']",
 	) as HTMLInputElement;
@@ -275,7 +356,7 @@ const handleTimeUpdate = (e: Event) => {
 	if (!seekerSlider || !seekerText) return;
 
 	switch (currentPlayerType) {
-		case "midi": {
+		case "timidity": {
 			const midiEvent = e as CustomEvent<{
 				currentTime: number;
 				maxTime: number;
@@ -285,16 +366,36 @@ const handleTimeUpdate = (e: Event) => {
 				seekerSlider.value = Math.round(
 					midiEvent.detail.currentTime,
 				).toString();
+				playerState.timidity.currentTime = midiEvent.detail.currentTime;
+				seekerText.innerText = `${formatTime(midiEvent.detail.currentTime)} / ${formatTime(midiEvent.detail.maxTime)}`;
+			}
+			break;
+		}
+
+		case "spessasynth": {
+			const midiEvent = e as CustomEvent<{
+				currentTime: number;
+				maxTime: number;
+			}>;
+			if (midiEvent.detail) {
+				seekerSlider.max = Math.floor(midiEvent.detail.maxTime).toString();
+				seekerSlider.value = Math.round(
+					midiEvent.detail.currentTime,
+				).toString();
+				playerState.spessasynth.currentTime = midiEvent.detail.currentTime;
 				seekerText.innerText = `${formatTime(midiEvent.detail.currentTime)} / ${formatTime(midiEvent.detail.maxTime)}`;
 			}
 			break;
 		}
 
 		case "normal": {
-			const audio = e.target as HTMLAudioElement;
-			seekerSlider.max = Math.floor(audio.duration).toString();
-			seekerSlider.value = Math.round(audio.currentTime).toString();
-			seekerText.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+			const audio = (e as Event).target as HTMLAudioElement;
+			if (audio) {
+				seekerSlider.max = Math.floor(audio.duration).toString();
+				seekerSlider.value = Math.round(audio.currentTime).toString();
+				playerState.normal.currentTime = audio.currentTime;
+				seekerText.innerText = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+			}
 			break;
 		}
 
@@ -380,8 +481,9 @@ const createVolumeSlider = () => {
 		const rawVolume = Number((e.target as HTMLInputElement).value);
 		volume = rawVolume / 100;
 		volumeText.textContent = `${rawVolume}%`;
-		midiPlayer.volume = volume;
+		if (timidityPlayerInstance) timidityPlayerInstance.volume = volume;
 		if (normalMusicPlayer) normalMusicPlayer.volume = volume;
+		if (spessasynthPlayerInstance) setSpessaSynthVolume(volume);
 		modPlayer.setVolume(volume);
 	});
 
@@ -405,6 +507,7 @@ const createSeekerSlider = () => {
 	slider.addEventListener("input", (e) => {
 		const position = Number((e.target as HTMLInputElement).value);
 		playerControls[currentPlayerType].seek(position);
+		playerState[currentPlayerType].currentTime = position;
 	});
 
 	timeUpdateEvtListener = handleTimeUpdate.bind(this);
@@ -417,6 +520,19 @@ const createSeekerSlider = () => {
 	return container;
 };
 
+const toggleSwitchPlayerButton = (playerType: PlayerType) => {
+	const switchPlayerButton = document.getElementById(
+		musicControlsSwitchPlayerButtonId,
+	) as HTMLButtonElement;
+	if (switchPlayerButton) {
+		if (playerType === "spessasynth" || playerType === "timidity") {
+			switchPlayerButton.classList.remove("hidden");
+		} else {
+			switchPlayerButton.classList.add("hidden");
+		}
+	}
+};
+
 const createPlayerControls = () => {
 	const container = document.createElement("div");
 	container.className = musicControlsContainerClass;
@@ -425,6 +541,40 @@ const createPlayerControls = () => {
 	playingTextDiv.id = musicWindowPlayingTextId;
 	playingTextDiv.textContent = "No music playing";
 	container.appendChild(playingTextDiv);
+
+	const switchPlayerButton = document.createElement("button");
+	switchPlayerButton.id = musicControlsSwitchPlayerButtonId;
+	const updateSwitchPlayerButtonText = () => {
+		switchPlayerButton.textContent = `Switch to ${selectedMidiPlayer === "spessasynth" ? "eawpats" : "gzdoom.sf2"}`;
+	};
+	updateSwitchPlayerButtonText();
+
+	switchPlayerButton.addEventListener("click", async () => {
+		const currentMusic = musicList.find(
+			(m) => m.name === playerState[currentPlayerType].currentMusic,
+		);
+
+		const previousMidiPlayer = selectedMidiPlayer;
+
+		selectedMidiPlayer =
+			previousMidiPlayer === "spessasynth" ? "timidity" : "spessasynth";
+
+		if (currentMusic) {
+			await playSong(currentMusic);
+			if (
+				currentPlayerType === "spessasynth" ||
+				currentPlayerType === "timidity"
+			) {
+				playerControls[currentPlayerType].seek(
+					playerState[previousMidiPlayer].currentTime,
+				);
+			}
+		}
+
+		updateSwitchPlayerButtonText();
+	});
+
+	container.appendChild(switchPlayerButton);
 
 	const buttons = [
 		{ label: "⏵︎", action: () => playSong(selectedMusic || musicList[0]) },
@@ -476,7 +626,14 @@ export const closeMusic = () => {
 };
 
 const disposeMusic = () => {
-	if (!midiPlayer.destroyed) midiPlayer.destroy();
+	if (timidityPlayerInstance && !timidityPlayerInstance.destroyed) {
+		timidityPlayerInstance.destroy();
+		timidityPlayerInstance = undefined;
+	}
+	if (spessasynthPlayerInstance) {
+		destroySpessaSynth();
+		spessasynthPlayerInstance = undefined;
+	}
 	modPlayer.unload();
 	disposeNormalMusicPlayer();
 

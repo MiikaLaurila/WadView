@@ -1,23 +1,27 @@
 {
-  "compilerOptions": {
-      "outDir": "./dist/",
-      "sourceMap": true,
-      "target": "esnext",
-      "module": "esnext",
-      "strict": true,
-      "noImplicitAny": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true,
-      "noImplicitOverride": true,
-      "moduleResolution": "bundler",
-      "esModuleInterop": true,
-      "resolveJsonModule": true,
-      "allowSyntheticDefaultImports": true,
-      "experimentalDecorators": true,
-
-  },
-  // Folder for your code
-  "include": [
-      "./src/**/*"
-, "static/midiAudioProcessor.js", "static/mod-player-worklet.js"  ]
+	"compilerOptions": {
+		"outDir": "./dist/",
+		"sourceMap": true,
+		"target": "esnext",
+		"module": "esnext",
+		"strict": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"moduleResolution": "bundler",
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
+		"experimentalDecorators": true,
+		"paths": {
+			"spessasynth_lib": ["./src/lib/spessasynth/spessasynth_lib.d.ts"],
+			"spessasynth_core": ["./src/lib/spessasynth/spessasynth_core.d.ts"]
+		}
+	},
+	"include": [
+		"./src/**/*",
+		"static/midiAudioProcessor.js",
+		"static/mod-player-worklet.js"
+	]
 }

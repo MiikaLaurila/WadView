@@ -237,4 +237,8 @@
 		position: fixed;
 		right: 8px;
 	}
+
+	#music-window-container.minimized #music-window-switch-player-button {
+		display: none;
+	}
 }

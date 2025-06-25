@@ -12,6 +12,22 @@ interface Attribution {
 
 const attributions: Attribution[] = [
 	{
+		project: "spessasynth_lib",
+		author: "spessasus",
+		text: "One of the best libraries I've ever come across! Please check out their work.",
+		link: "https://github.com/spessasus/spessasynth_lib",
+		license: "https://github.com/spessasus/spessasynth_lib/blob/master/LICENSE",
+		modificationsMade: "",
+	},
+	{
+		project: "gzdoom",
+		author: "ZDoom + GZDoom team",
+		text: "Spessasynth uses gzdoom.sf2 from GZDoom project as the soundfont.",
+		link: "https://github.com/ZDoom/gzdoom",
+		license: "https://github.com/ZDoom/gzdoom/blob/master/LICENSE",
+		modificationsMade: "",
+	},
+	{
 		project: "js-mod-player",
 		author: "Anders Tornblad (atornblad)",
 		text: "",
@@ -92,6 +108,14 @@ const attributions: Attribution[] = [
 		author: "id Software",
 		text: "Distributed as shareware",
 		link: "",
+		license: "",
+		modificationsMade: "",
+	},
+	{
+		project: "",
+		author: "",
+		text: "Other licenses",
+		link: "./bundle.js.LICENSE.txt",
 		license: "",
 		modificationsMade: "",
 	},

@@ -17,7 +17,8 @@
 		"pixi-viewport": "^4.38.0",
 		"pixi.js": "^6.5.9",
 		"unzipit": "^1.4.0",
-		"wadview-lib": "^0.0.12"
+		"wadview-lib": "0.0.13",
+		"spessasynth_lib": "^3.26.31"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
